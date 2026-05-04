@@ -1,0 +1,30 @@
+# Build output
+build/
+out/
+dist/
+*.o
+*.obj
+*.elf
+*.axf
+*.bin
+*.hex
+*.map
+*.lst
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.uvguix.*
+*.uvoptx
+*.uvprojx
+*.ewd
+*.ewp
+*.ewt
+*.launch
+
+# OS
+Thumbs.db
+.DS_Store
