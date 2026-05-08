@@ -5,6 +5,7 @@
 
 #include "FreeRTOS.h"
 #include "queue.h"
+#include "task.h"
 
 #include "embedded_workbench/rtos_port.h"
 
@@ -12,6 +13,10 @@ typedef struct {
     QueueHandle_t sensor_sample_queue;
     QueueHandle_t command_queue;
     QueueHandle_t response_queue;
+    TaskHandle_t sensor_acquire_task;
+    TaskHandle_t env_process_task;
+    TaskHandle_t communication_task;
+    TaskHandle_t alarm_output_task;
 } freertos_rtos_port_context_t;
 
 bool freertos_rtos_port_init(rtos_port_t *port, freertos_rtos_port_context_t *context);
