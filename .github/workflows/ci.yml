@@ -33,3 +33,58 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  firmware-build:
+    name: Firmware ELF build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+          python -m pip install --upgrade pip
+          python -m pip install ziglang
+
+      - name: Locate Zig
+        id: zig
+        run: |
+          ZIG_EXE="$(python - <<'PY'
+          import pathlib
+          import ziglang
+          zig = pathlib.Path(ziglang.__file__).with_name("zig")
+          print(zig)
+          PY
+          )"
+          WRAPPER_DIR="${RUNNER_TEMP}/zig-wrappers"
+          mkdir -p "${WRAPPER_DIR}"
+          cat > "${WRAPPER_DIR}/zig-ar" <<EOF
+          #!/usr/bin/env sh
+          "${ZIG_EXE}" ar "\$@"
+          EOF
+          cat > "${WRAPPER_DIR}/zig-ranlib" <<EOF
+          #!/usr/bin/env sh
+          "${ZIG_EXE}" ranlib "\$@"
+          EOF
+          chmod +x "${WRAPPER_DIR}/zig-ar" "${WRAPPER_DIR}/zig-ranlib"
+          echo "zig_exe=${ZIG_EXE}" >> "${GITHUB_OUTPUT}"
+          echo "zig_ar=${WRAPPER_DIR}/zig-ar" >> "${GITHUB_OUTPUT}"
+          echo "zig_ranlib=${WRAPPER_DIR}/zig-ranlib" >> "${GITHUB_OUTPUT}"
+
+      - name: Configure firmware
+        env:
+          ZIG_EXE: ${{ steps.zig.outputs.zig_exe }}
+          ZIG_AR: ${{ steps.zig.outputs.zig_ar }}
+          ZIG_RANLIB: ${{ steps.zig.outputs.zig_ranlib }}
+        run: |
+          cmake -S . -B build-fw -G Ninja \
+            -D CMAKE_TOOLCHAIN_FILE=cmake/toolchains/zig-arm-none-eabi.cmake \
+            -D EW_BUILD_HOST_TOOLS=OFF \
+            -D EW_BUILD_TESTS=OFF \
+            -D EW_BUILD_FIRMWARE=ON
+
+      - name: Build firmware
+        run: cmake --build build-fw
