@@ -38,6 +38,7 @@ add_library(embedded_app
     app/src/command_handler.c
     app/src/response_format.c
     app/src/rtos_task_model.c
+    app/src/rtos_port.c
 )
 
 target_include_directories(embedded_app
@@ -180,4 +181,15 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME board_profile COMMAND test_board_profile)
+
+    add_executable(test_rtos_port
+        tests/test_rtos_port.c
+    )
+
+    target_link_libraries(test_rtos_port
+        PRIVATE
+            embedded_app
+    )
+
+    add_test(NAME rtos_port COMMAND test_rtos_port)
 endif()
