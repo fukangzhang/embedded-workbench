@@ -65,6 +65,7 @@ add_library(embedded_app
     app/src/app_info.c
     app/src/alarm_state.c
     app/src/command_handler.c
+    app/src/command_session.c
     app/src/response_format.c
     app/src/rtos_task_model.c
     app/src/rtos_port.c
@@ -346,6 +347,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME command_handler COMMAND test_command_handler)
+
+    add_executable(test_command_session
+        tests/test_command_session.c
+    )
+
+    target_link_libraries(test_command_session
+        PRIVATE
+            embedded_app
+    )
+
+    add_test(NAME command_session COMMAND test_command_session)
 
     add_executable(test_response_format
         tests/test_response_format.c
