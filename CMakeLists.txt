@@ -7,6 +7,15 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 enable_testing()
 
+add_library(embedded_drivers
+    drivers/src/sensor_sample.c
+)
+
+target_include_directories(embedded_drivers
+    PUBLIC
+        drivers/include
+)
+
 add_library(embedded_app
     app/src/app_info.c
 )
@@ -35,3 +44,14 @@ target_link_libraries(test_app_info
 )
 
 add_test(NAME app_info COMMAND test_app_info)
+
+add_executable(test_sensor_sample
+    tests/test_sensor_sample.c
+)
+
+target_link_libraries(test_sensor_sample
+    PRIVATE
+        embedded_drivers
+)
+
+add_test(NAME sensor_sample COMMAND test_sensor_sample)
