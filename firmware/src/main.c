@@ -9,6 +9,7 @@
 #include "embedded_workbench/rtos_port.h"
 #include "embedded_workbench/rtos_task_model.h"
 #include "embedded_workbench/sensor_sample.h"
+#include "embedded_workbench/stm32_board_gpio_init.h"
 
 #if defined(EW_FIRMWARE_USE_FREERTOS)
 #include "embedded_workbench/rtos_port_freertos.h"
@@ -22,6 +23,9 @@ static board_digital_output_context_t firmware_board_output_context = {0};
 static digital_output_controller_t firmware_digital_output = {0};
 static alarm_output_digital_sink_context_t firmware_alarm_output_digital_context = {0};
 static alarm_output_sink_t firmware_alarm_output_sink = {0};
+static volatile uint32_t firmware_rcc_ahb1enr = 0u;
+static stm32_gpio_registers_t firmware_gpioa_registers = {0};
+static stm32_gpio_registers_t firmware_gpiob_registers = {0};
 
 static bool firmware_alarm_output_self_check(void)
 {
@@ -47,6 +51,54 @@ static bool firmware_alarm_output_self_check(void)
            led_level == DIGITAL_OUTPUT_LEVEL_HIGH &&
            buzzer_level == DIGITAL_OUTPUT_LEVEL_HIGH &&
            actuator_level == DIGITAL_OUTPUT_LEVEL_HIGH;
+}
+
+static bool gpio_pin_is_output(const stm32_gpio_registers_t *registers, unsigned int pin)
+{
+    uint32_t mode = 0u;
+
+    if (registers == 0 || pin > 15u) {
+        return false;
+    }
+
+    mode = (registers->moder >> (pin * 2u)) & 3u;
+
+    return mode == 1u;
+}
+
+static bool firmware_stm32_gpio_init_self_check(void)
+{
+    const board_profile_t *profile = board_profile_default();
+    stm32_rcc_gpio_clock_port_t clock_ports[] = {
+        {"PA", 0u},
+        {"PB", 1u},
+    };
+    stm32_gpio_config_port_t gpio_ports[] = {
+        {"PA", &firmware_gpioa_registers},
+        {"PB", &firmware_gpiob_registers},
+    };
+    stm32_rcc_gpio_clock_context_t clock_context;
+    stm32_gpio_config_context_t gpio_context;
+
+    firmware_rcc_ahb1enr = 0u;
+    firmware_gpioa_registers.moder = 0u;
+    firmware_gpioa_registers.otyper = 0u;
+    firmware_gpioa_registers.ospeedr = 0u;
+    firmware_gpioa_registers.pupdr = 0u;
+    firmware_gpiob_registers.moder = 0u;
+    firmware_gpiob_registers.otyper = 0u;
+    firmware_gpiob_registers.ospeedr = 0u;
+    firmware_gpiob_registers.pupdr = 0u;
+
+    /* 这里仍然使用模拟寄存器，只验证固件目标能串起：
+     * RCC 端口时钟 -> GPIO 输出配置 -> board_profile 告警输出引脚。 */
+    return stm32_rcc_gpio_clock_init(&clock_context, &firmware_rcc_ahb1enr, clock_ports, 2u) &&
+           stm32_gpio_config_init(&gpio_context, gpio_ports, 2u) &&
+           stm32_board_gpio_init_alarm_outputs(profile, &clock_context, &gpio_context, 0) &&
+           (firmware_rcc_ahb1enr & ((1u << 0u) | (1u << 1u))) == ((1u << 0u) | (1u << 1u)) &&
+           gpio_pin_is_output(&firmware_gpioa_registers, profile->alarm_led.pin) &&
+           gpio_pin_is_output(&firmware_gpiob_registers, profile->alarm_buzzer.pin) &&
+           gpio_pin_is_output(&firmware_gpiob_registers, profile->alarm_actuator.pin);
 }
 
 #if defined(EW_FIRMWARE_USE_FREERTOS)
@@ -100,6 +152,7 @@ int main(void)
         result.status_requested &&
         response_format_status(response, sizeof(response), firmware_last_state, &sample) &&
         firmware_alarm_output_self_check() &&
+        firmware_stm32_gpio_init_self_check() &&
         freertos_ready) {
         firmware_self_check = 1;
     } else {
