@@ -8,6 +8,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 enable_testing()
 
 add_library(embedded_drivers
+    drivers/src/command_parser.c
     drivers/src/sensor_sample.c
 )
 
@@ -72,3 +73,14 @@ target_link_libraries(test_alarm_state
 )
 
 add_test(NAME alarm_state COMMAND test_alarm_state)
+
+add_executable(test_command_parser
+    tests/test_command_parser.c
+)
+
+target_link_libraries(test_command_parser
+    PRIVATE
+        embedded_drivers
+)
+
+add_test(NAME command_parser COMMAND test_command_parser)
