@@ -1,8 +1,11 @@
 #include "embedded_workbench/rtos_port_freertos.h"
 
 #include "embedded_workbench/alarm_output.h"
+#include "embedded_workbench/alarm_output_timing.h"
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/rtos_task_model.h"
+
+#define ALARM_OUTPUT_REFRESH_PERIOD_MS 50u
 
 typedef struct {
     alarm_state_t state;
@@ -106,14 +109,35 @@ static void alarm_output_task(void *parameter)
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
     freertos_alarm_event_t event;
     alarm_output_command_t command;
+    alarm_output_command_t rendered_command;
+    bool has_command = false;
+    uint32_t elapsed_ms = 0u;
+    bool indicator_is_on = false;
+    BaseType_t receive_result = pdFAIL;
 
     for (;;) {
         if (context != 0 &&
-            context->alarm_event_queue != 0 &&
-            xQueueReceive(context->alarm_event_queue, &event, portMAX_DELAY) == pdPASS) {
+            context->alarm_event_queue != 0) {
+            receive_result = xQueueReceive(
+                context->alarm_event_queue,
+                &event,
+                has_command ? (TickType_t)ALARM_OUTPUT_REFRESH_PERIOD_MS : portMAX_DELAY);
+
+            if (receive_result == pdPASS) {
+                has_command = alarm_output_command_for_state(event.state, &command);
+                elapsed_ms = 0u;
+            } else if (has_command) {
+                elapsed_ms += ALARM_OUTPUT_REFRESH_PERIOD_MS;
+            }
+
             if (context->alarm_output_sink != 0 &&
-                alarm_output_command_for_state(event.state, &command)) {
-                (void)alarm_output_sink_apply(context->alarm_output_sink, &command);
+                has_command &&
+                alarm_output_indicator_is_on(&command, elapsed_ms, &indicator_is_on)) {
+                rendered_command = command;
+                if (!indicator_is_on) {
+                    rendered_command.indicator = ALARM_OUTPUT_INDICATOR_OFF;
+                }
+                (void)alarm_output_sink_apply(context->alarm_output_sink, &rendered_command);
             }
         }
     }
