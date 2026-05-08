@@ -59,6 +59,8 @@ static stm32_gpio_registers_t *find_registers(
         return 0;
     }
 
+    /* context->ports 是“端口名 -> 寄存器地址”的查找表。
+     * 这样 board_profile 只写 PA/PB，不需要知道 0x40020000 这样的芯片地址。 */
     for (index = 0u; index < context->port_count; index++) {
         if (context->ports[index].registers != 0 &&
             text_equals(context->ports[index].port, port_name)) {
@@ -77,6 +79,8 @@ static void write_two_bit_field(
     uint32_t shift = pin * 2u;
     uint32_t mask = STM32_GPIO_TWO_BIT_MASK << shift;
 
+    /* MODER/OSPEEDR/PUPDR 每个 pin 占 2 bit。
+     * 先用 ~mask 清掉原来的 2 bit，再把新值移到对应位置写回。 */
     *register_value = (*register_value & ~mask) | ((value & STM32_GPIO_TWO_BIT_MASK) << shift);
 }
 
@@ -87,6 +91,7 @@ static void write_one_bit_field(
 {
     uint32_t mask = 1u << pin;
 
+    /* OTYPER 每个 pin 只占 1 bit，因此这里只需要设置或清除单个 bit。 */
     if (enabled) {
         *register_value |= mask;
     } else {

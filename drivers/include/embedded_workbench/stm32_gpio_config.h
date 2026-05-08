@@ -8,6 +8,8 @@
 #include "embedded_workbench/board_profile.h"
 
 typedef struct {
+    /* 这里只列当前初始化输出脚需要的寄存器字段。
+     * volatile 表示这些值可能被硬件改变，编译器不能随意缓存或优化掉访问。 */
     volatile uint32_t moder;
     volatile uint32_t otyper;
     volatile uint32_t ospeedr;
@@ -39,6 +41,8 @@ typedef struct {
 } stm32_gpio_output_config_t;
 
 typedef struct {
+    /* port 是 "PA"/"PB" 这类板级名字，registers 指向该 GPIO 端口的寄存器组。
+     * 在测试里它可以指向模拟结构体；在真实固件里它会指向芯片手册给出的固定地址。 */
     const char *port;
     stm32_gpio_registers_t *registers;
 } stm32_gpio_config_port_t;

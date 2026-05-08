@@ -19,10 +19,15 @@ static volatile alarm_state_t firmware_last_state = ALARM_STATE_NORMAL;
 static volatile int firmware_self_check = 0;
 uint32_t SystemCoreClock = 16000000u;
 
+/* 这些 static 对象模拟“固件全局资源”：
+ * 裸机环境没有操作系统进程的生命周期，很多驱动上下文会在整个固件运行期间一直存在。 */
 static board_digital_output_context_t firmware_board_output_context = {0};
 static digital_output_controller_t firmware_digital_output = {0};
 static alarm_output_digital_sink_context_t firmware_alarm_output_digital_context = {0};
 static alarm_output_sink_t firmware_alarm_output_sink = {0};
+
+/* 下面这组不是 STM32 真实地址，而是固件自检用的模拟寄存器。
+ * 真实地址绑定在 stm32f401re_gpio_bindings 模块里，当前 main 仍然保持可构建、可链接的安全自检。 */
 static volatile uint32_t firmware_rcc_ahb1enr = 0u;
 static stm32_gpio_registers_t firmware_gpioa_registers = {0};
 static stm32_gpio_registers_t firmware_gpiob_registers = {0};
@@ -61,6 +66,7 @@ static bool gpio_pin_is_output(const stm32_gpio_registers_t *registers, unsigned
         return false;
     }
 
+    /* MODER 每个 pin 占两位，01 表示通用输出模式。 */
     mode = (registers->moder >> (pin * 2u)) & 3u;
 
     return mode == 1u;
@@ -80,6 +86,7 @@ static bool firmware_stm32_gpio_init_self_check(void)
     stm32_rcc_gpio_clock_context_t clock_context;
     stm32_gpio_config_context_t gpio_context;
 
+    /* 每次自检前清零模拟寄存器，确保结果来自本次初始化流程。 */
     firmware_rcc_ahb1enr = 0u;
     firmware_gpioa_registers.moder = 0u;
     firmware_gpioa_registers.otyper = 0u;
