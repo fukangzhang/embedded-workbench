@@ -218,6 +218,7 @@
 - `2026-05-08-FreeRTOS任务创建骨架.md`
 - `2026-05-08-FreeRTOS调度器显式启动入口.md`
 - `2026-05-08-FreeRTOS告警事件流骨架.md`
+- `2026-05-08-FreeRTOS告警输出节拍接入.md`
 
 对应代码：
 
@@ -237,6 +238,8 @@
 - queue 如何连接 task 之间的数据流
 - `xTaskCreate` 创建任务，但不等于调度器已经启动
 - `vTaskStartScheduler` 为什么要通过显式开关控制
+- 告警输出 task 为什么是“事件更新状态 + 周期刷新 indicator”
+- `period_ms` 如何通过 `alarm_output_timing` 接入 FreeRTOS 输出链路
 - 当前 FreeRTOS 验证是构建和链接级，板上运行验证还没做
 
 ## 代码阅读建议
