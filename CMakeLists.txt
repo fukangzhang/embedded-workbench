@@ -22,6 +22,7 @@ add_library(embedded_app
     app/src/alarm_state.c
     app/src/command_handler.c
     app/src/response_format.c
+    app/src/rtos_task_model.c
 )
 
 target_include_directories(embedded_app
@@ -109,3 +110,14 @@ target_link_libraries(test_response_format
 )
 
 add_test(NAME response_format COMMAND test_response_format)
+
+add_executable(test_rtos_task_model
+    tests/test_rtos_task_model.c
+)
+
+target_link_libraries(test_rtos_task_model
+    PRIVATE
+        embedded_app
+)
+
+add_test(NAME rtos_task_model COMMAND test_rtos_task_model)
