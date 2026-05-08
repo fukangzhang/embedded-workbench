@@ -91,6 +91,7 @@ int main(void)
     alarm_output_sink_t sink = {&ops, &fake};
     alarm_output_command_t command;
 
+    /* fake sink 记录每个输出函数的调用，测试 apply 是否完整传递了命令内容。 */
     command.indicator = ALARM_OUTPUT_INDICATOR_FAST_BLINK;
     command.buzzer_enabled = true;
     command.actuator_enabled = true;
@@ -116,6 +117,7 @@ int main(void)
     fake.indicator_calls = 0;
     fake.buzzer_calls = 0;
     fake.actuator_calls = 0;
+    /* 蜂鸣器失败时执行器不应继续调用，验证 sink 的失败短路策略。 */
     if (expect_false(alarm_output_sink_apply(&sink, &command)) != 0 ||
         expect_int(fake.indicator_calls, 1) != 0 ||
         expect_int(fake.buzzer_calls, 1) != 0 ||

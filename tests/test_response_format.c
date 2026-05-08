@@ -35,6 +35,7 @@ int main(void)
     invalid_result = ok_result;
     invalid_result.result = COMMAND_RESULT_INVALID_VALUE;
 
+    /* 响应格式使用精确字符串断言，确保协议文本对上位机保持稳定。 */
     if (expect_true(response_format_result(buffer, sizeof(buffer), &ok_result)) != 0 ||
         expect_string(buffer, "OK result=ok\n") != 0) {
         return 1;
@@ -58,6 +59,7 @@ int main(void)
         return 5;
     }
 
+    /* 小缓冲区、空配置和未知状态都应该明确失败，而不是输出截断或误导性文本。 */
     if (expect_false(response_format_config(buffer, sizeof(buffer), 0)) != 0) {
         return 6;
     }

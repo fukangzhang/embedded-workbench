@@ -32,6 +32,8 @@ static bool apply_threshold(command_threshold_t threshold, int32_t value, alarm_
 {
     alarm_config_t next = *config;
 
+    /* 先改副本 next，而不是直接改 config。
+     * 这样即使新值导致整体配置无效，也不会把半更新状态留给系统。 */
     switch (threshold) {
     case COMMAND_THRESHOLD_TEMP_WARNING_HIGH:
         if (!is_int16_value(value)) {
@@ -90,6 +92,7 @@ static bool apply_threshold(command_threshold_t threshold, int32_t value, alarm_
         return false;
     }
 
+    /* 只有类型范围和阈值相对关系都通过后，才提交新配置。 */
     *config = next;
     return true;
 }
@@ -106,6 +109,7 @@ command_handler_result_t command_handler_handle(
 
     switch (command->type) {
     case COMMAND_TYPE_GET_STATUS:
+        /* 查询命令不在这里格式化文本，只设置标志交给上层决定如何响应。 */
         result = make_result(COMMAND_RESULT_OK);
         result.status_requested = true;
         return result;
@@ -123,6 +127,7 @@ command_handler_result_t command_handler_handle(
             return make_result(COMMAND_RESULT_INVALID_VALUE);
         }
 
+        /* config_changed 表示配置已经成功提交，测试可用它区分“请求合法”和“确实修改”。 */
         result.config_changed = true;
         return result;
     case COMMAND_TYPE_INVALID:

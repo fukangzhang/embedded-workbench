@@ -8,6 +8,8 @@
 #include "embedded_workbench/command_handler.h"
 #include "embedded_workbench/sensor_sample.h"
 
+/* 将内部状态格式化为面向通信输出的单行文本。
+ * buffer 太小时返回 false，调用者可据此选择丢弃或发送错误响应。 */
 bool response_format_result(
     char *buffer,
     size_t buffer_size,

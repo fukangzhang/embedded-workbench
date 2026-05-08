@@ -13,6 +13,8 @@ typedef enum {
     ALARM_STATE_SENSOR_FAULT = 3
 } alarm_state_t;
 
+/* 告警阈值使用传感器原始单位：温湿度为 x10，光照为 lux，烟雾为 ppm。
+ * recovery 阈值用于回滞，避免数值贴着边界抖动时状态频繁切换。 */
 typedef struct {
     int16_t temperature_warning_high_c_x10;
     int16_t temperature_alarm_high_c_x10;
@@ -30,6 +32,9 @@ typedef struct {
 
 alarm_config_t alarm_config_default(void);
 bool alarm_config_is_valid(const alarm_config_t *config);
+
+/* 根据上一状态和新采样计算下一状态。
+ * 输入无效时返回 SENSOR_FAULT；ALARM/WARNING 状态只有达到 recovery 条件才会退出。 */
 alarm_state_t alarm_state_update(
     alarm_state_t current_state,
     const alarm_config_t *config,

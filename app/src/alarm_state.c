@@ -26,6 +26,8 @@ bool alarm_config_is_valid(const alarm_config_t *config)
         return false;
     }
 
+    /* 高温/高湿/烟雾是“越大越危险”：恢复阈值必须不高于 warning，
+     * warning 又必须不高于 alarm，状态机才能形成清晰的回滞区间。 */
     if (config->temperature_recovery_high_c_x10 > config->temperature_warning_high_c_x10 ||
         config->temperature_warning_high_c_x10 > config->temperature_alarm_high_c_x10) {
         return false;
@@ -36,6 +38,8 @@ bool alarm_config_is_valid(const alarm_config_t *config)
         return false;
     }
 
+    /* 光照是“越小越危险”，所以阈值顺序和高温类相反：
+     * alarm_low <= warning_low <= recovery_low。 */
     if (config->light_alarm_low_lux > config->light_warning_low_lux ||
         config->light_warning_low_lux > config->light_recovery_low_lux) {
         return false;
@@ -82,10 +86,13 @@ alarm_state_t alarm_state_update(
         return ALARM_STATE_SENSOR_FAULT;
     }
 
+    /* 最高优先级先判断 alarm：只要任一指标达到严重阈值，就立即进入 ALARM。 */
     if (is_alarm_sample(config, sample)) {
         return ALARM_STATE_ALARM;
     }
 
+    /* 已经处于 ALARM 时，不能因为降到 warning 区间就立刻退出；
+     * 必须全部指标都达到 recovery 条件，避免输出反复开关。 */
     if (current_state == ALARM_STATE_ALARM && !is_recovered_sample(config, sample)) {
         return ALARM_STATE_ALARM;
     }
@@ -94,6 +101,7 @@ alarm_state_t alarm_state_update(
         return ALARM_STATE_WARNING;
     }
 
+    /* WARNING 也使用同一组 recovery 条件，让“进入”和“退出”有明确间隔。 */
     if (current_state == ALARM_STATE_WARNING && !is_recovered_sample(config, sample)) {
         return ALARM_STATE_WARNING;
     }

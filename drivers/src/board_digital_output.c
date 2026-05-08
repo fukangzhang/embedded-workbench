@@ -33,6 +33,8 @@ static digital_output_level_t *level_for_pin(
         return 0;
     }
 
+    /* 通过板卡 profile 做引脚到模拟电平的映射。
+     * 测试里即使传入拷贝出来的 pin，只要端口和编号一致也应匹配。 */
     if (pin_matches(pin, &context->profile->alarm_led)) {
         return &context->alarm_led_level;
     }
@@ -59,6 +61,7 @@ static bool board_write(
         return false;
     }
 
+    /* 主机侧 board sink 不碰真实 GPIO，只记录电平和写次数，方便单元测试断言。 */
     *stored_level = level;
     board_context->write_count++;
 

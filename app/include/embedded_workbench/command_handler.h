@@ -20,6 +20,8 @@ typedef struct {
     bool alarm_clear_requested;
 } command_handler_result_t;
 
+/* 处理已经解析好的命令。
+ * 这个层负责修改配置或设置请求标志，不直接生成串口响应文本。 */
 command_handler_result_t command_handler_handle(
     const command_t *command,
     alarm_config_t *config);

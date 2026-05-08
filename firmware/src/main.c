@@ -31,6 +31,8 @@ static bool firmware_alarm_output_self_check(void)
     digital_output_level_t buzzer_level = DIGITAL_OUTPUT_LEVEL_LOW;
     digital_output_level_t actuator_level = DIGITAL_OUTPUT_LEVEL_LOW;
 
+    /* 固件早期没有真实外设流程时，用主机同款数字输出链路做一次端到端自检：
+     * 状态 -> 输出命令 -> sink -> board 数字输出，最终检查三个输出是否都被拉高。 */
     return board_digital_output_init(&firmware_digital_output, &firmware_board_output_context, profile) &&
            alarm_output_digital_sink_init(
                &firmware_alarm_output_sink,
@@ -60,6 +62,7 @@ static bool firmware_freertos_queue_self_check(const sensor_sample_t *sample, co
     queued_response.text[1] = 'K';
     queued_response.text[2] = '\0';
 
+    /* FreeRTOS 自检只验证队列和端口包装能互通，不在这里启动真正的调度器。 */
     return freertos_rtos_port_init(&firmware_rtos_port, &firmware_rtos_context) &&
            rtos_port_start(&firmware_rtos_port) &&
            rtos_port_send_sensor_sample(&firmware_rtos_port, sample) &&
@@ -84,6 +87,7 @@ int main(void)
     command_init(&command);
     command.type = COMMAND_TYPE_GET_STATUS;
 
+    /* main 当前是固件骨架自检入口：把核心纯逻辑串起来，给链接和启动流程一个可观察结果。 */
     result = command_handler_handle(&command, &config);
     firmware_last_state = alarm_state_update(ALARM_STATE_NORMAL, &config, &sample);
 
@@ -104,6 +108,7 @@ int main(void)
 
 #if defined(EW_FIRMWARE_USE_FREERTOS) && defined(EW_FIRMWARE_START_FREERTOS_SCHEDULER)
     if (freertos_ready && !freertos_rtos_port_start_scheduler(&firmware_rtos_context)) {
+        /* 正常情况下调度器启动后不应返回；返回说明启动失败或端口尚未真正接好。 */
         firmware_self_check = -2;
     }
 #endif

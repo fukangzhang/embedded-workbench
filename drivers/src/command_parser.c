@@ -52,6 +52,7 @@ static const char *read_token(const char *cursor, char *buffer, size_t buffer_si
 
     cursor = skip_spaces(cursor);
 
+    /* token 只读到空白或行尾；缓冲区不足时直接失败，避免截断后误识别命令。 */
     while (!is_space_char(*cursor) && !is_line_end(*cursor)) {
         if (index + 1u >= buffer_size) {
             return 0;
@@ -106,6 +107,7 @@ static bool parse_int32(const char *cursor, int32_t *value, const char **end_out
 
     cursor = skip_spaces(cursor);
 
+    /* 手写整数解析是为了在裸机/小 libc 场景下避免依赖 strtol。 */
     if (*cursor == '-') {
         negative = true;
         cursor++;
@@ -118,6 +120,7 @@ static bool parse_int32(const char *cursor, int32_t *value, const char **end_out
 
         has_digit = true;
 
+        /* 每加入一位前先检查边界，保证 2147483647 和 -2147483648 都能被正确处理。 */
         if (!negative && parsed > (2147483647u - digit) / 10u) {
             return false;
         }
@@ -156,6 +159,7 @@ bool command_parse(const char *line, command_t *command)
 
     command_init(command);
 
+    /* 第一个 token 决定命令类型；后续分支再按命令类型读取剩余参数。 */
     cursor = read_token(cursor, token, sizeof(token));
     if (cursor == 0 || token[0] == '\0') {
         return false;
@@ -192,6 +196,7 @@ bool command_parse(const char *line, command_t *command)
         int32_t value = 0;
         command_threshold_t threshold = COMMAND_THRESHOLD_NONE;
 
+        /* SET 需要“阈值名 + 整数值”，并且值后面只能有空白或行尾。 */
         cursor = read_token(cursor, token, sizeof(token));
         if (cursor == 0 || !parse_threshold_name(token, &threshold)) {
             return false;

@@ -16,6 +16,7 @@ bool rtos_port_start(const rtos_port_t *port)
         return false;
     }
 
+    /* 统一入口只负责防御性检查，真正的 RTOS/仿真实现由 ops 决定。 */
     return port->ops->start(port->context);
 }
 
@@ -25,6 +26,7 @@ bool rtos_port_send_sensor_sample(const rtos_port_t *port, const sensor_sample_t
         return false;
     }
 
+    /* 发送前校验采样范围，防止无效传感器数据进入任务队列。 */
     return port->ops->send_sensor_sample(port->context, sample);
 }
 

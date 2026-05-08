@@ -17,6 +17,8 @@ bool alarm_output_sink_apply(
         return false;
     }
 
+    /* 按“指示灯 -> 蜂鸣器 -> 执行器”的顺序输出。
+     * 如果某一步失败，后续输出不再继续，调用者能知道本次命令没有完整落地。 */
     if (!sink->ops->set_indicator(sink->context, command->indicator, command->period_ms)) {
         return false;
     }

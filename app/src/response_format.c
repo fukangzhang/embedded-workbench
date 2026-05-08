@@ -11,6 +11,8 @@ typedef struct {
     bool ok;
 } response_writer_t;
 
+/* response_writer_t 是一个很小的安全写入器：所有追加操作都维护结尾 '\0'，
+ * 一旦空间不足就把 ok 置 false，后续调用自然变成 no-op。 */
 static void writer_init(response_writer_t *writer, char *buffer, size_t buffer_size)
 {
     writer->buffer = buffer;
@@ -68,6 +70,7 @@ static void writer_append_u32(response_writer_t *writer, uint32_t value)
         count++;
     }
 
+    /* 数字是从低位到高位取出的，所以写入缓冲区前要反向输出。 */
     while (count > 0u) {
         count--;
         writer_append_char(writer, digits[count]);
@@ -80,6 +83,7 @@ static void writer_append_i32(response_writer_t *writer, int32_t value)
 
     if (value < 0) {
         writer_append_char(writer, '-');
+        /* 避免直接对 INT32_MIN 取负导致溢出，先 +1 再补回 1。 */
         magnitude = (uint32_t)(-(value + 1)) + 1u;
     } else {
         magnitude = (uint32_t)value;
@@ -111,6 +115,7 @@ bool response_format_result(
         prefix = "OK";
     }
 
+    /* 结果响应保持单行 key=value 格式，方便串口日志和测试用字符串比对。 */
     writer_append_string(&writer, prefix);
     writer_append_string(&writer, " result=");
     writer_append_string(&writer, command_result_name(result->result));
@@ -136,6 +141,7 @@ bool response_format_status(
     }
 
     writer_init(&writer, buffer, buffer_size);
+    /* 状态响应把传感器值和由状态推导出的输出策略放在同一行，便于现场调试。 */
     writer_append_string(&writer, "STATUS state=");
     writer_append_string(&writer, alarm_state_name(state));
     writer_append_string(&writer, " temp_c_x10=");
@@ -171,6 +177,7 @@ bool response_format_config(
     }
 
     writer_init(&writer, buffer, buffer_size);
+    /* 配置响应输出完整阈值快照，避免调试时只看到被修改的单个字段。 */
     writer_append_string(&writer, "CONFIG temp_warn=");
     writer_append_i32(&writer, config->temperature_warning_high_c_x10);
     writer_append_string(&writer, " temp_alarm=");

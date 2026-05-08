@@ -29,6 +29,7 @@ int main(void)
     sensor_sample_t not_recovered_from_alarm = sensor_sample_make(360, 500u, 300u, 20u);
     sensor_sample_t invalid_sample = sensor_sample_make(SENSOR_TEMPERATURE_MAX_C_X10 + 1, 500u, 300u, 20u);
 
+    /* 这些用例覆盖状态机主路径：正常、warning、alarm、回滞保持、恢复和传感器故障。 */
     if (expect_true(alarm_config_is_valid(&config)) != 0) {
         return 1;
     }
@@ -53,6 +54,7 @@ int main(void)
         return 6;
     }
 
+    /* ALARM 状态必须等所有指标恢复到 recovery 区间后才回 NORMAL。 */
     if (expect_state(alarm_state_update(ALARM_STATE_ALARM, &config, &recovered), ALARM_STATE_NORMAL) != 0) {
         return 7;
     }

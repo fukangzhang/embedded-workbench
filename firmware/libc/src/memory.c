@@ -6,6 +6,7 @@ void *memcpy(void *destination, const void *source, size_t count)
     const unsigned char *src = (const unsigned char *)source;
     size_t index = 0u;
 
+    /* freestanding 固件环境下可能没有完整 libc，这里提供最小可链接实现。 */
     for (index = 0u; index < count; index++) {
         dst[index] = src[index];
     }
@@ -30,6 +31,7 @@ void *memmove(void *destination, const void *source, size_t count)
     unsigned char *dst = (unsigned char *)destination;
     const unsigned char *src = (const unsigned char *)source;
 
+    /* memmove 需要处理重叠区域：目标在源前面时正向拷贝，目标在源后面时反向拷贝。 */
     if (dst < src) {
         size_t index = 0u;
 
