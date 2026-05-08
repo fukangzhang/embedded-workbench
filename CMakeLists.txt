@@ -50,6 +50,7 @@ target_link_libraries(embedded_drivers
 )
 
 add_library(embedded_app
+    app/src/alarm_output_digital_sink.c
     app/src/alarm_output.c
     app/src/alarm_output_sink.c
     app/src/app_info.c
@@ -197,6 +198,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME alarm_output_sink COMMAND test_alarm_output_sink)
+
+    add_executable(test_alarm_output_digital_sink
+        tests/test_alarm_output_digital_sink.c
+    )
+
+    target_link_libraries(test_alarm_output_digital_sink
+        PRIVATE
+            embedded_app
+    )
+
+    add_test(NAME alarm_output_digital_sink COMMAND test_alarm_output_digital_sink)
 
     add_executable(test_command_parser
         tests/test_command_parser.c
