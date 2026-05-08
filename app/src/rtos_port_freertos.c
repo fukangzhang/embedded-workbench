@@ -3,6 +3,10 @@
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/rtos_task_model.h"
 
+typedef struct {
+    alarm_state_t state;
+} freertos_alarm_event_t;
+
 static QueueHandle_t create_queue(rtos_queue_id_t id, size_t expected_item_size)
 {
     const rtos_queue_descriptor_t *descriptor = rtos_task_model_find_queue(id);
@@ -21,7 +25,8 @@ static bool context_is_ready(const freertos_rtos_port_context_t *context)
     return context != 0 &&
            context->sensor_sample_queue != 0 &&
            context->command_queue != 0 &&
-           context->response_queue != 0;
+           context->response_queue != 0 &&
+           context->alarm_event_queue != 0;
 }
 
 static bool tasks_are_created(const freertos_rtos_port_context_t *context)
@@ -61,12 +66,17 @@ static void env_process_task(void *parameter)
     sensor_sample_t sample;
     alarm_state_t state = ALARM_STATE_NORMAL;
     alarm_config_t config = alarm_config_default();
+    freertos_alarm_event_t event;
 
     for (;;) {
         if (context != 0 &&
             context->sensor_sample_queue != 0 &&
             xQueueReceive(context->sensor_sample_queue, &sample, portMAX_DELAY) == pdPASS) {
             state = alarm_state_update(state, &config, &sample);
+            event.state = state;
+            if (context->alarm_event_queue != 0) {
+                (void)xQueueSend(context->alarm_event_queue, &event, (TickType_t)0);
+            }
         }
     }
 }
@@ -93,10 +103,14 @@ static void communication_task(void *parameter)
 static void alarm_output_task(void *parameter)
 {
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
+    freertos_alarm_event_t event;
 
     for (;;) {
-        (void)context;
-        delay_for_descriptor(RTOS_TASK_ALARM_OUTPUT);
+        if (context != 0 &&
+            context->alarm_event_queue != 0 &&
+            xQueueReceive(context->alarm_event_queue, &event, portMAX_DELAY) == pdPASS) {
+            (void)event;
+        }
     }
 }
 
@@ -204,6 +218,9 @@ bool freertos_rtos_port_init(rtos_port_t *port, freertos_rtos_port_context_t *co
     }
     if (context->response_queue == 0) {
         context->response_queue = create_queue(RTOS_QUEUE_RESPONSE, sizeof(rtos_response_message_t));
+    }
+    if (context->alarm_event_queue == 0) {
+        context->alarm_event_queue = create_queue(RTOS_QUEUE_ALARM_EVENT, sizeof(freertos_alarm_event_t));
     }
 
     if (!context_is_ready(context)) {
