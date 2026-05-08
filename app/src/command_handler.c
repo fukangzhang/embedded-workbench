@@ -1,0 +1,146 @@
+#include "embedded_workbench/command_handler.h"
+
+static bool is_int16_value(int32_t value)
+{
+    return value >= -32768 && value <= 32767;
+}
+
+static bool is_uint16_value(int32_t value)
+{
+    return value >= 0 && value <= 65535;
+}
+
+static bool is_uint32_value(int32_t value)
+{
+    return value >= 0;
+}
+
+static command_handler_result_t make_result(command_result_t result)
+{
+    command_handler_result_t handler_result;
+
+    handler_result.result = result;
+    handler_result.config_changed = false;
+    handler_result.status_requested = false;
+    handler_result.config_requested = false;
+    handler_result.alarm_clear_requested = false;
+
+    return handler_result;
+}
+
+static bool apply_threshold(command_threshold_t threshold, int32_t value, alarm_config_t *config)
+{
+    alarm_config_t next = *config;
+
+    switch (threshold) {
+    case COMMAND_THRESHOLD_TEMP_WARNING_HIGH:
+        if (!is_int16_value(value)) {
+            return false;
+        }
+        next.temperature_warning_high_c_x10 = (int16_t)value;
+        break;
+    case COMMAND_THRESHOLD_TEMP_ALARM_HIGH:
+        if (!is_int16_value(value)) {
+            return false;
+        }
+        next.temperature_alarm_high_c_x10 = (int16_t)value;
+        break;
+    case COMMAND_THRESHOLD_HUMIDITY_WARNING_HIGH:
+        if (!is_uint16_value(value)) {
+            return false;
+        }
+        next.humidity_warning_high_rh_x10 = (uint16_t)value;
+        break;
+    case COMMAND_THRESHOLD_HUMIDITY_ALARM_HIGH:
+        if (!is_uint16_value(value)) {
+            return false;
+        }
+        next.humidity_alarm_high_rh_x10 = (uint16_t)value;
+        break;
+    case COMMAND_THRESHOLD_LIGHT_WARNING_LOW:
+        if (!is_uint32_value(value)) {
+            return false;
+        }
+        next.light_warning_low_lux = (uint32_t)value;
+        break;
+    case COMMAND_THRESHOLD_LIGHT_ALARM_LOW:
+        if (!is_uint32_value(value)) {
+            return false;
+        }
+        next.light_alarm_low_lux = (uint32_t)value;
+        break;
+    case COMMAND_THRESHOLD_SMOKE_WARNING:
+        if (!is_uint16_value(value)) {
+            return false;
+        }
+        next.smoke_warning_ppm = (uint16_t)value;
+        break;
+    case COMMAND_THRESHOLD_SMOKE_ALARM:
+        if (!is_uint16_value(value)) {
+            return false;
+        }
+        next.smoke_alarm_ppm = (uint16_t)value;
+        break;
+    case COMMAND_THRESHOLD_NONE:
+    default:
+        return false;
+    }
+
+    if (!alarm_config_is_valid(&next)) {
+        return false;
+    }
+
+    *config = next;
+    return true;
+}
+
+command_handler_result_t command_handler_handle(
+    const command_t *command,
+    alarm_config_t *config)
+{
+    command_handler_result_t result;
+
+    if (command == 0 || config == 0 || !alarm_config_is_valid(config)) {
+        return make_result(COMMAND_RESULT_INVALID_COMMAND);
+    }
+
+    switch (command->type) {
+    case COMMAND_TYPE_GET_STATUS:
+        result = make_result(COMMAND_RESULT_OK);
+        result.status_requested = true;
+        return result;
+    case COMMAND_TYPE_GET_CONFIG:
+        result = make_result(COMMAND_RESULT_OK);
+        result.config_requested = true;
+        return result;
+    case COMMAND_TYPE_CLEAR_ALARM:
+        result = make_result(COMMAND_RESULT_OK);
+        result.alarm_clear_requested = true;
+        return result;
+    case COMMAND_TYPE_SET_THRESHOLD:
+        result = make_result(COMMAND_RESULT_OK);
+        if (!apply_threshold(command->threshold, command->value, config)) {
+            return make_result(COMMAND_RESULT_INVALID_VALUE);
+        }
+
+        result.config_changed = true;
+        return result;
+    case COMMAND_TYPE_INVALID:
+    default:
+        return make_result(COMMAND_RESULT_INVALID_COMMAND);
+    }
+}
+
+const char *command_result_name(command_result_t result)
+{
+    switch (result) {
+    case COMMAND_RESULT_OK:
+        return "ok";
+    case COMMAND_RESULT_INVALID_COMMAND:
+        return "invalid-command";
+    case COMMAND_RESULT_INVALID_VALUE:
+        return "invalid-value";
+    default:
+        return "unknown";
+    }
+}
