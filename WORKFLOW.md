@@ -1,50 +1,53 @@
-# Workflow
+# 工作流程
 
-## Objective
-Keep the project understandable for a beginner while still following an engineering workflow that will look credible in interviews.
+## 目标
+在你还是初学者的情况下，也能用一套稳定、不容易失控的方式推进项目，保证每一步都能解释、回退和复盘。
 
-## Default Loop
-1. Define one small task.
-2. Write or update a short plan in `docs/exec-plans/active/`.
-3. Decide the validation for that task before editing code.
-4. Implement the smallest viable change.
-5. Run validation and capture the result.
-6. Update docs, then commit.
+## 默认执行流程
+1. 先定义一个小任务
+2. 在 `docs/exec-plans/active/` 写一份简短计划
+3. 在动手前先想清楚这一步怎么验证
+4. 做最小可用改动
+5. 运行验证
+6. 更新文档
+7. 提交代码
 
-## Planning Rules
-- One active plan per meaningful task stream.
-- Plans should include:
-  - goal
-  - scope
-  - steps
-  - validation
-  - open questions
-- Move finished plans to `docs/exec-plans/completed/`.
+## 计划规则
+- 同一时间尽量只保留一个主要活动计划
+- 每份计划至少包含：
+  - 目标
+  - 范围
+  - 步骤
+  - 验证方式
+  - 未决问题
+  - 进度记录
+- 完成后的计划移到 `docs/exec-plans/completed/`
 
-## TDD Guidance
-Use test-driven development when the code is host-testable:
-- protocol parsing
-- command handling
-- state machines
-- thresholds and alarm rules
-- data conversion and filtering
+## 测试策略
+下面这些内容优先采用测试驱动或先写验证用例：
+- 协议解析
+- 命令处理
+- 状态机
+- 阈值判断与告警逻辑
+- 数据转换、滤波、边界条件处理
 
-Use test-after for code that is mostly integration or startup wiring:
-- build scripts
-- vendor SDK integration
-- board init
-- RTOS task wiring
+下面这些内容可以先实现再验证：
+- 板级初始化
+- 厂商 `SDK` 接入
+- 启动文件与构建接线
+- `FreeRTOS` 早期任务骨架
 
-## GitHub Flow
-1. Keep `main` stable.
-2. Create a branch from `main`.
-3. Make focused commits with a conventional prefix.
-4. Open a PR with scope, validation, and risks.
-5. Merge only after review and validation.
+## GitHub 流程
+1. 保持 `main` 稳定
+2. 从 `main` 拉出功能分支
+3. 做聚焦改动并写清晰提交信息
+4. 开 `PR`，说明改动内容、原因、验证方式和风险
+5. 评审通过后再合并回 `main`
 
-## Definition of Done
-- Scope is limited and clear.
-- Code or docs follow the architecture rules.
-- Relevant tests or checks were run.
-- The plan and project docs reflect the new state.
-- The branch is ready for review or merge.
+## 完成定义
+一次任务算完成，至少要满足：
+- 本次范围清楚，没有顺手带出太多无关改动
+- 代码或文档符合当前架构规则
+- 相关测试或检查已经执行
+- 计划和说明文档反映了当前状态
+- 分支已经准备好可供审查或合并

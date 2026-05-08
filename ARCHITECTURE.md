@@ -1,42 +1,42 @@
-# Architecture
+# 架构说明
 
-## Goal
-This repository is an embedded project scaffold for a resume-grade MCU/RTOS project that can be developed before hardware is available.
+## 目标
+这个仓库用于承载一个适合求职展示的嵌入式项目。项目主线聚焦在 `STM32/MCU + FreeRTOS + 通信/传感器/控制`，并允许在没有真实硬件的情况下先完成软件骨架、业务逻辑和测试体系。
 
-## Layers
+## 分层
 1. `hardware/`
-   Hardware notes, pin mapping, board assumptions, and future schematics.
+   记录硬件假设、引脚映射、板卡说明、原理图备注等内容。
 2. `bsp/`
-   Board support package. Clock, pin init, startup integration, and MCU-specific glue.
+   板级支持层，负责时钟、引脚初始化、启动相关适配，以及 MCU 相关的底层胶水代码。
 3. `drivers/`
-   Reusable drivers and protocol adapters for UART, I2C, SPI, sensors, storage, and actuators.
+   放可复用驱动与协议适配层，例如 `UART`、`I2C`、`SPI`、传感器接口、执行器接口等。
 4. `app/`
-   Application logic, FreeRTOS tasks, state machines, control policies, and feature orchestration.
+   放应用逻辑，包括 `FreeRTOS` 任务、状态机、控制策略、告警逻辑、调度关系等。
 5. `tests/`
-   Host-side tests, protocol parsing tests, state-machine tests, and simulation stubs.
+   放主机侧测试、协议解析测试、状态机测试、仿真桩代码等。
 6. `docs/`
-   Plans, design records, specs, and debugging notes.
+   放计划、设计记录、产品说明、调试记录、参考资料说明等。
 
-## Dependency Rules
-- `hardware` does not depend on code.
-- `bsp` may depend on vendor SDK and startup files.
-- `drivers` may depend on `bsp`, but not on `app`.
-- `app` may depend on `drivers` and `bsp`, but should not know vendor details unless necessary.
-- `tests` may depend on `app` and `drivers`, using fakes or stubs for hardware-facing code.
+## 依赖规则
+- `hardware/` 不依赖代码实现
+- `bsp/` 可以依赖厂商 `SDK`、启动文件和芯片底层文件
+- `drivers/` 可以依赖 `bsp/`，但不依赖 `app/`
+- `app/` 可以依赖 `drivers/` 和 `bsp/`，但尽量不直接耦合厂商细节
+- `tests/` 可以依赖 `app/` 与 `drivers/`，并使用仿真桩或假实现替代真实硬件
 
-## Design Principles
-- Prefer composition over global state.
-- Keep parsing and business rules testable on the host machine.
-- Isolate RTOS APIs behind task or service boundaries where practical.
-- Keep module interfaces small and explicit.
-- Add new folders only when they reduce real confusion.
+## 设计原则
+- 优先保持模块边界清晰，不让所有逻辑堆到一个文件里
+- 能在主机上测试的协议解析、状态机、阈值判断等逻辑，要尽量独立出来
+- `RTOS` 接口尽量收敛在任务层或服务边界，不让底层细节到处扩散
+- 接口保持小而明确，避免一开始就设计过重的抽象
+- 新增目录和抽象时，要确实能降低复杂度，而不是为了“看起来专业”
 
-## Initial Project Shape
-The first real project should be able to run in two modes:
-- simulation mode on the host machine for rapid iteration
-- target mode for future STM32 board integration
+## 当前项目形态
+第一阶段项目需要支持两种开发思路：
+- 主机仿真模式：便于没有硬件时先验证业务逻辑
+- 目标板模式：未来接入 `STM32` 开发板时可以逐步替换底层实现
 
-## Open-Source Use Policy
-- Open-source repositories may be used for reference, learning, and comparison.
-- We do not present copied demos as original project work.
-- If we adopt a third-party component, we document what was reused, why, and under which license.
+## 开源使用原则
+- 可以把开源仓库当作参考、对照和学习材料
+- 不把下载来的演示项目直接包装成自己的项目成果
+- 如果后续确实复用了第三方组件，需要记录来源、用途和许可信息
