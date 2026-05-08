@@ -7,6 +7,8 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 option(EW_BUILD_HOST_TOOLS "Build host-side simulation tools" ON)
 option(EW_BUILD_TESTS "Build host-side tests" ON)
+option(EW_BUILD_FIRMWARE "Build target firmware ELF" OFF)
+option(EW_USE_FREERTOS "Link target firmware with external FreeRTOS-Kernel" OFF)
 
 if(EW_BUILD_TESTS)
     enable_testing()
@@ -19,6 +21,15 @@ add_library(embedded_bsp
 target_include_directories(embedded_bsp
     PUBLIC
         bsp/include
+)
+
+add_library(embedded_freestanding_support
+    firmware/libc/src/memory.c
+)
+
+target_include_directories(embedded_freestanding_support
+    PUBLIC
+        firmware/libc/include
 )
 
 add_library(embedded_drivers
@@ -37,7 +48,20 @@ add_library(embedded_app
     app/src/command_handler.c
     app/src/response_format.c
     app/src/rtos_task_model.c
+    app/src/rtos_port.c
 )
+
+if(EW_USE_FREERTOS)
+    include(cmake/FreeRTOSKernel.cmake)
+    target_sources(embedded_app
+        PRIVATE
+            app/src/rtos_port_freertos.c
+    )
+    target_link_libraries(embedded_app
+        PRIVATE
+            freertos_kernel
+    )
+endif()
 
 target_include_directories(embedded_app
     PUBLIC
@@ -57,6 +81,45 @@ if(EW_BUILD_HOST_TOOLS)
     target_link_libraries(host_sim
         PRIVATE
             embedded_app
+    )
+endif()
+
+if(EW_BUILD_FIRMWARE)
+    add_executable(embedded_firmware
+        firmware/src/main.c
+        firmware/startup/startup_stm32f401re.c
+    )
+
+    target_link_libraries(embedded_firmware
+        PRIVATE
+            embedded_app
+            embedded_bsp
+            embedded_drivers
+            embedded_freestanding_support
+    )
+
+    if(EW_USE_FREERTOS)
+        target_link_libraries(embedded_firmware
+            PRIVATE
+                freertos_kernel
+        )
+        target_compile_definitions(embedded_firmware
+            PRIVATE
+                EW_FIRMWARE_USE_FREERTOS=1
+        )
+    endif()
+
+    target_link_options(embedded_firmware
+        PRIVATE
+            -nostdlib
+            -Wl,-T,${CMAKE_SOURCE_DIR}/firmware/linker/stm32f401re.ld
+            -Wl,-e,Reset_Handler
+            -Wl,--gc-sections
+    )
+
+    set_target_properties(embedded_firmware PROPERTIES
+        OUTPUT_NAME embedded_firmware
+        SUFFIX ".elf"
     )
 endif()
 
@@ -152,4 +215,15 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME board_profile COMMAND test_board_profile)
+
+    add_executable(test_rtos_port
+        tests/test_rtos_port.c
+    )
+
+    target_link_libraries(test_rtos_port
+        PRIVATE
+            embedded_app
+    )
+
+    add_test(NAME rtos_port COMMAND test_rtos_port)
 endif()
