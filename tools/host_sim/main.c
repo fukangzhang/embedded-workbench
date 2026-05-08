@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "embedded_workbench/alarm_output.h"
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/app_info.h"
 #include "embedded_workbench/command_handler.h"
@@ -20,8 +21,19 @@ static void print_sample(const sensor_sample_t *sample)
 
 static void print_status(alarm_state_t state, const sensor_sample_t *sample)
 {
+    alarm_output_command_t output;
+
     print_sample(sample);
     printf("state=%s\n", alarm_state_name(state));
+
+    if (alarm_output_command_for_state(state, &output)) {
+        printf(
+            "output indicator=%s buzzer=%s actuator=%s period_ms=%u\n",
+            alarm_output_indicator_name(output.indicator),
+            output.buzzer_enabled ? "on" : "off",
+            output.actuator_enabled ? "on" : "off",
+            (unsigned int)output.period_ms);
+    }
 }
 
 static alarm_state_t run_demo_samples(const alarm_config_t *config, sensor_sample_t *last_sample)
