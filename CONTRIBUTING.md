@@ -1,33 +1,34 @@
-# Contributing
+# 贡献约定
 
-## Branch Naming
-- `feat/<topic>` for features
-- `fix/<topic>` for bug fixes
-- `docs/<topic>` for documentation
-- `chore/<topic>` for maintenance
-- `test/<topic>` for test-only changes
+## 分支命名
+- `feat/<主题>`：新功能
+- `fix/<主题>`：缺陷修复
+- `docs/<主题>`：文档更新
+- `chore/<主题>`：维护性改动
+- `test/<主题>`：测试相关改动
 
-Examples:
-- `feat/sensor-abstraction`
+示例：
+- `feat/sensor-simulation`
 - `fix/uart-timeout`
 - `docs/project-roadmap`
 
-## Commit Messages
-Use short conventional commits:
-- `feat: add sensor interface`
-- `fix: handle uart timeout path`
-- `docs: define git workflow`
+## 提交信息
+使用简短、明确的约定式提交：
+- `feat: 添加传感器抽象接口`
+- `fix: 修正串口帧边界判断`
+- `docs: 补充项目工作流说明`
+- `test: 覆盖告警阈值逻辑`
 
-## Pull Requests
-Every PR should answer:
-- What changed
-- Why it changed
-- How it was validated
-- What is still not covered
+## Pull Request 要求
+每个 `PR` 至少说清楚：
+- 改了什么
+- 为什么改
+- 怎么验证
+- 还有哪些内容暂时没覆盖
 
-## Review Checklist
-- Scope is focused
-- No unrelated refactors
-- Tests or checks are appropriate for the change
-- Docs are updated if behavior or workflow changed
-- Open-source reuse is attributed where needed
+## 评审检查项
+- 改动范围是否聚焦
+- 是否夹带无关重构
+- 测试或检查是否与改动风险匹配
+- 如果行为或流程有变化，文档是否同步更新
+- 如果参考了开源资料，是否说明来源与用途
