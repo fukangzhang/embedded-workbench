@@ -38,6 +38,7 @@ add_library(embedded_drivers
     drivers/src/command_parser.c
     drivers/src/digital_output.c
     drivers/src/sensor_sample.c
+    drivers/src/stm32_board_gpio_init.c
     drivers/src/stm32_gpio_config.c
     drivers/src/stm32_gpio_output.c
     drivers/src/stm32_rcc_gpio_clock.c
@@ -280,6 +281,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME stm32_rcc_gpio_clock COMMAND test_stm32_rcc_gpio_clock)
+
+    add_executable(test_stm32_board_gpio_init
+        tests/test_stm32_board_gpio_init.c
+    )
+
+    target_link_libraries(test_stm32_board_gpio_init
+        PRIVATE
+            embedded_drivers
+    )
+
+    add_test(NAME stm32_board_gpio_init COMMAND test_stm32_board_gpio_init)
 
     add_executable(test_board_digital_output
         tests/test_board_digital_output.c

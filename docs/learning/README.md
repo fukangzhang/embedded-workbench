@@ -157,6 +157,7 @@
 - `2026-05-08-STM32GPIO输出后端.md`
 - `2026-05-08-STM32GPIO初始化配置.md`
 - `2026-05-08-STM32RCCGPIO时钟使能.md`
+- `2026-05-08-STM32板级GPIO输出初始化.md`
 - `2026-05-08-目标板工具链预研.md`
 - `2026-05-08-STM32固件工程骨架.md`
 - `2026-05-08-固件告警输出链路自检.md`
@@ -175,6 +176,8 @@
 - `drivers/src/stm32_gpio_config.c`
 - `drivers/include/embedded_workbench/stm32_rcc_gpio_clock.h`
 - `drivers/src/stm32_rcc_gpio_clock.c`
+- `drivers/include/embedded_workbench/stm32_board_gpio_init.h`
+- `drivers/src/stm32_board_gpio_init.c`
 - `firmware/src/main.c`
 - `firmware/startup/startup_stm32f401re.c`
 - `firmware/linker/stm32f401re.ld`
@@ -186,6 +189,7 @@
 - `tests/test_stm32_gpio_output.c`
 - `tests/test_stm32_gpio_config.c`
 - `tests/test_stm32_rcc_gpio_clock.c`
+- `tests/test_stm32_board_gpio_init.c`
 
 看完要能解释：
 
@@ -196,6 +200,7 @@
 - `stm32_gpio_output` 如何把 high/low 转成 STM32 `BSRR` 写入
 - `stm32_gpio_config` 如何配置 `MODER/OTYPER/OSPEEDR/PUPDR`
 - `stm32_rcc_gpio_clock` 为什么要先打开 GPIO 端口时钟
+- `stm32_board_gpio_init` 如何按 profile 串起 RCC 和 GPIO 配置
 - `firmware/src/main.c` 现在做了哪些自检
 - 固件自检为什么能覆盖输出链路链接，但不能证明真实 GPIO 已经动作
 - startup 文件和 linker script 是什么角色
