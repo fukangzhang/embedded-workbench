@@ -44,6 +44,7 @@ target_include_directories(embedded_drivers
 )
 
 add_library(embedded_app
+    app/src/alarm_output.c
     app/src/app_info.c
     app/src/alarm_state.c
     app/src/command_handler.c
@@ -167,6 +168,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME alarm_state COMMAND test_alarm_state)
+
+    add_executable(test_alarm_output
+        tests/test_alarm_output.c
+    )
+
+    target_link_libraries(test_alarm_output
+        PRIVATE
+            embedded_app
+    )
+
+    add_test(NAME alarm_output COMMAND test_alarm_output)
 
     add_executable(test_command_parser
         tests/test_command_parser.c
