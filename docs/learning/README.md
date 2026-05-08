@@ -142,6 +142,7 @@
 先看：
 
 - `2026-05-08-BSP目标板Profile.md`
+- `2026-05-08-数字输出驱动抽象.md`
 - `2026-05-08-目标板工具链预研.md`
 - `2026-05-08-STM32固件工程骨架.md`
 
@@ -149,17 +150,21 @@
 
 - `bsp/include/embedded_workbench/board_profile.h`
 - `bsp/src/board_profile.c`
+- `drivers/include/embedded_workbench/digital_output.h`
+- `drivers/src/digital_output.c`
 - `firmware/src/main.c`
 - `firmware/startup/startup_stm32f401re.c`
 - `firmware/linker/stm32f401re.ld`
 - `cmake/toolchains/arm-none-eabi.cmake`
 - `cmake/toolchains/zig-arm-none-eabi.cmake`
 - `tests/test_board_profile.c`
+- `tests/test_digital_output.c`
 
 看完要能解释：
 
 - BSP 和 app 的边界在哪里
 - `alarm_led`、`alarm_buzzer`、`alarm_actuator` 只是板级映射，不是 GPIO 驱动
+- `digital_output` 为什么属于驱动抽象，不应该知道告警状态机
 - `firmware/src/main.c` 现在做了哪些自检
 - startup 文件和 linker script 是什么角色
 - 为什么当前 Zig 路径是构建验证，不是最终板上工具链
