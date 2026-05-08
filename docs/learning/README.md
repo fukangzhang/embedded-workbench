@@ -58,6 +58,7 @@
 - `2026-05-08-传感器数据模型.md`
 - `2026-05-08-告警状态机.md`
 - `2026-05-08-告警输出策略.md`
+- `2026-05-08-主机仿真告警输出状态展示.md`
 
 对应代码：
 
@@ -67,9 +68,12 @@
 - `app/src/alarm_state.c`
 - `app/include/embedded_workbench/alarm_output.h`
 - `app/src/alarm_output.c`
+- `app/src/response_format.c`
+- `tools/host_sim/main.c`
 - `tests/test_sensor_sample.c`
 - `tests/test_alarm_state.c`
 - `tests/test_alarm_output.c`
+- `tests/test_response_format.c`
 
 看完要能解释：
 
@@ -77,6 +81,7 @@
 - 为什么要校验传感器数据范围
 - warning/alarm/recovery 这些阈值怎么影响状态切换
 - 为什么“告警状态”和“硬件输出策略”要分成两个模块
+- 主机仿真里看到的 output 字段来自哪个模块
 
 ### 2. 命令、配置和响应
 

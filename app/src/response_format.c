@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "embedded_workbench/alarm_output.h"
+
 typedef struct {
     char *buffer;
     size_t buffer_size;
@@ -86,6 +88,11 @@ static void writer_append_i32(response_writer_t *writer, int32_t value)
     writer_append_u32(writer, magnitude);
 }
 
+static const char *bool_name(bool value)
+{
+    return value ? "on" : "off";
+}
+
 bool response_format_result(
     char *buffer,
     size_t buffer_size,
@@ -118,9 +125,13 @@ bool response_format_status(
     alarm_state_t state,
     const sensor_sample_t *sample)
 {
+    alarm_output_command_t output;
     response_writer_t writer;
 
     if (!sensor_sample_is_valid(sample)) {
+        return false;
+    }
+    if (!alarm_output_command_for_state(state, &output)) {
         return false;
     }
 
@@ -135,6 +146,14 @@ bool response_format_status(
     writer_append_u32(&writer, sample->light_lux);
     writer_append_string(&writer, " smoke_ppm=");
     writer_append_u32(&writer, sample->smoke_ppm);
+    writer_append_string(&writer, " indicator=");
+    writer_append_string(&writer, alarm_output_indicator_name(output.indicator));
+    writer_append_string(&writer, " buzzer=");
+    writer_append_string(&writer, bool_name(output.buzzer_enabled));
+    writer_append_string(&writer, " actuator=");
+    writer_append_string(&writer, bool_name(output.actuator_enabled));
+    writer_append_string(&writer, " period_ms=");
+    writer_append_u32(&writer, output.period_ms);
     writer_append_char(&writer, '\n');
 
     return writer.ok;

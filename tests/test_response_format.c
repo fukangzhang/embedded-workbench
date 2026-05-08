@@ -46,7 +46,7 @@ int main(void)
     }
 
     if (expect_true(response_format_status(buffer, sizeof(buffer), ALARM_STATE_WARNING, &sample)) != 0 ||
-        expect_string(buffer, "STATUS state=warning temp_c_x10=253 humidity_rh_x10=604 light_lux=350 smoke_ppm=12\n") != 0) {
+        expect_string(buffer, "STATUS state=warning temp_c_x10=253 humidity_rh_x10=604 light_lux=350 smoke_ppm=12 indicator=slow_blink buzzer=off actuator=off period_ms=1000\n") != 0) {
         return 3;
     }
 
@@ -64,6 +64,10 @@ int main(void)
 
     if (expect_false(response_format_result(0, sizeof(buffer), &ok_result)) != 0) {
         return 7;
+    }
+
+    if (expect_false(response_format_status(buffer, sizeof(buffer), (alarm_state_t)99, &sample)) != 0) {
+        return 8;
     }
 
     return 0;
