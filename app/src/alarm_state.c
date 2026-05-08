@@ -4,6 +4,8 @@ alarm_config_t alarm_config_default(void)
 {
     alarm_config_t config;
 
+    /* C 里局部结构体不会自动带业务默认值，所以这里逐字段写清楚。
+     * 温度/湿度使用 x10 单位，例如 350 表示 35.0 摄氏度或 35.0%RH。 */
     config.temperature_warning_high_c_x10 = 350;
     config.temperature_alarm_high_c_x10 = 450;
     config.temperature_recovery_high_c_x10 = 330;
@@ -55,6 +57,8 @@ bool alarm_config_is_valid(const alarm_config_t *config)
 
 static bool is_alarm_sample(const alarm_config_t *config, const sensor_sample_t *sample)
 {
+    /* “任一指标严重异常”即可进入 ALARM，所以这里用 ||。
+     * 这个函数只回答“是否触发 alarm 阈值”，不负责状态回滞。 */
     return sample->temperature_c_x10 >= config->temperature_alarm_high_c_x10 ||
            sample->humidity_rh_x10 >= config->humidity_alarm_high_rh_x10 ||
            sample->light_lux <= config->light_alarm_low_lux ||
@@ -63,6 +67,7 @@ static bool is_alarm_sample(const alarm_config_t *config, const sensor_sample_t 
 
 static bool is_warning_sample(const alarm_config_t *config, const sensor_sample_t *sample)
 {
+    /* WARNING 是比 ALARM 更轻的风险区间，同样采用任一指标触发。 */
     return sample->temperature_c_x10 >= config->temperature_warning_high_c_x10 ||
            sample->humidity_rh_x10 >= config->humidity_warning_high_rh_x10 ||
            sample->light_lux <= config->light_warning_low_lux ||
@@ -71,6 +76,8 @@ static bool is_warning_sample(const alarm_config_t *config, const sensor_sample_
 
 static bool is_recovered_sample(const alarm_config_t *config, const sensor_sample_t *sample)
 {
+    /* 恢复必须所有指标都回到安全侧，所以这里用 &&。
+     * 这就是状态机的“回滞”：进入风险容易，退出风险更谨慎。 */
     return sample->temperature_c_x10 <= config->temperature_recovery_high_c_x10 &&
            sample->humidity_rh_x10 <= config->humidity_recovery_high_rh_x10 &&
            sample->light_lux >= config->light_recovery_low_lux &&

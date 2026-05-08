@@ -8,6 +8,8 @@
 #define ALARM_OUTPUT_REFRESH_PERIOD_MS 50u
 
 typedef struct {
+    /* 目前输出任务只需要知道告警状态。
+     * 之后如果要带时间戳、传感器摘要，也可以从这个事件结构扩展。 */
     alarm_state_t state;
 } freertos_alarm_event_t;
 
@@ -27,6 +29,8 @@ static QueueHandle_t create_queue(rtos_queue_id_t id, size_t expected_item_size)
 
 static bool context_is_ready(const freertos_rtos_port_context_t *context)
 {
+    /* FreeRTOS port 的最小可用条件：四条队列都已经创建好。
+     * alarm_output_sink 可以为空，因为早期构建阶段允许只验证任务/队列链路。 */
     return context != 0 &&
            context->sensor_sample_queue != 0 &&
            context->command_queue != 0 &&
@@ -52,6 +56,8 @@ static void delay_for_descriptor(rtos_task_id_t id)
         period_ms = descriptor->period_ms;
     }
 
+    /* 当前 tick 换算还很粗糙，先用毫秒数直接构建骨架；
+     * 后续接真实板级 tick 配置时再引入 pdMS_TO_TICKS。 */
     vTaskDelay((TickType_t)period_ms);
 }
 
@@ -60,6 +66,7 @@ static void sensor_acquire_task(void *parameter)
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
 
     for (;;) {
+        /* 采集任务暂时只保留周期骨架，后续会在这里读取传感器并发送 sample queue。 */
         (void)context;
         delay_for_descriptor(RTOS_TASK_SENSOR_ACQUIRE);
     }
@@ -197,6 +204,8 @@ static bool create_tasks(freertos_rtos_port_context_t *context)
 
 static bool freertos_start(void *context)
 {
+    /* 对 rtos_port 来说 start 表示“任务创建完成”。
+     * 是否真的启动调度器由 freertos_rtos_port_start_scheduler 显式控制。 */
     return create_tasks((freertos_rtos_port_context_t *)context);
 }
 
@@ -286,5 +295,6 @@ bool freertos_rtos_port_start_scheduler(freertos_rtos_port_context_t *context)
 
     vTaskStartScheduler();
 
+    /* FreeRTOS 调度器正常启动后通常不会返回；返回到这里按失败处理。 */
     return false;
 }

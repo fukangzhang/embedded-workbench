@@ -25,6 +25,8 @@ static bool is_line_end(char value)
 
 static bool string_equals(const char *left, const char *right)
 {
+    /* 不用 strcmp 是为了让这个模块尽量少依赖 libc。
+     * 指针每次向后移动一个字符，直到遇到字符串结尾 '\0'。 */
     while (*left != '\0' && *right != '\0') {
         if (*left != *right) {
             return false;
@@ -39,6 +41,7 @@ static bool string_equals(const char *left, const char *right)
 
 static const char *skip_spaces(const char *cursor)
 {
+    /* cursor 是“当前读到哪里”的指针。返回新的位置，而不是修改原字符串。 */
     while (is_space_char(*cursor)) {
         cursor++;
     }
@@ -52,7 +55,8 @@ static const char *read_token(const char *cursor, char *buffer, size_t buffer_si
 
     cursor = skip_spaces(cursor);
 
-    /* token 只读到空白或行尾；缓冲区不足时直接失败，避免截断后误识别命令。 */
+    /* token 只读到空白或行尾；缓冲区不足时直接失败，避免截断后误识别命令。
+     * index + 1u >= buffer_size 是为了给最后的 '\0' 留一个位置。 */
     while (!is_space_char(*cursor) && !is_line_end(*cursor)) {
         if (index + 1u >= buffer_size) {
             return 0;
@@ -75,6 +79,8 @@ static bool has_only_line_end_after_spaces(const char *cursor)
 
 static bool parse_threshold_name(const char *text, command_threshold_t *threshold)
 {
+    /* 文本协议的名字在这里集中翻译成 enum。
+     * 后面的 command_handler 只处理 enum，不再关心原始字符串怎么拼。 */
     if (string_equals(text, "TEMP_WARN")) {
         *threshold = COMMAND_THRESHOLD_TEMP_WARNING_HIGH;
     } else if (string_equals(text, "TEMP_ALARM")) {
@@ -107,7 +113,8 @@ static bool parse_int32(const char *cursor, int32_t *value, const char **end_out
 
     cursor = skip_spaces(cursor);
 
-    /* 手写整数解析是为了在裸机/小 libc 场景下避免依赖 strtol。 */
+    /* 手写整数解析是为了在裸机/小 libc 场景下避免依赖 strtol。
+     * end_out 会返回“数字后面的第一个字符”，调用者用它继续检查尾部是否合法。 */
     if (*cursor == '-') {
         negative = true;
         cursor++;

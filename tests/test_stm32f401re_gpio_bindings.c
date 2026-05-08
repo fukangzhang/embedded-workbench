@@ -30,6 +30,8 @@ int main(void)
     const stm32_gpio_config_port_t *config_ports = 0;
     const stm32_gpio_output_port_t *output_ports = 0;
 
+    /* 这个测试运行在开发机上，不在 STM32 上。
+     * 因此只能把指针转成整数比较地址，绝不能写 *stm32f401re_rcc_ahb1enr()。 */
     if (expect_uintptr((uintptr_t)stm32f401re_rcc_ahb1enr(), STM32F401RE_RCC_AHB1ENR_ADDRESS) != 0) {
         return 1;
     }
@@ -65,6 +67,7 @@ int main(void)
         return 4;
     }
 
+    /* count 参数允许传 0；这里确认传 0 不会意外改动调用者自己的变量。 */
     count = 123u;
     (void)stm32f401re_gpio_clock_ports(0);
     (void)stm32f401re_gpio_config_ports(0);

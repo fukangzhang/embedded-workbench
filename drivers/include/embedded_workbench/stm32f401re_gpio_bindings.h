@@ -8,11 +8,20 @@
 #include "embedded_workbench/stm32_gpio_output.h"
 #include "embedded_workbench/stm32_rcc_gpio_clock.h"
 
+/* 这些常量来自 STM32F401RE 的内存映射：
+ * - RCC_AHB1ENR：打开 GPIOA/GPIOB 等外设时钟
+ * - GPIOA/GPIOB base：各 GPIO 端口寄存器组的起始地址
+ * - BSRR offset：GPIO 端口内“原子置位/复位”寄存器偏移
+ *
+ * 注意：这里只保存地址数值。主机测试只能比较地址，不能解引用这些地址；
+ * 只有在真正跑在 STM32 上时，这些地址才对应真实硬件寄存器。 */
 #define STM32F401RE_RCC_AHB1ENR_ADDRESS ((uintptr_t)0x40023830u)
 #define STM32F401RE_GPIOA_BASE_ADDRESS ((uintptr_t)0x40020000u)
 #define STM32F401RE_GPIOB_BASE_ADDRESS ((uintptr_t)0x40020400u)
 #define STM32F401RE_GPIO_BSRR_OFFSET ((uintptr_t)0x18u)
 
+/* 返回值都是静态表的指针，调用者不要释放，也不要修改表内容。
+ * count 可以传 0，表示只要表指针，不关心元素数量。 */
 volatile uint32_t *stm32f401re_rcc_ahb1enr(void);
 const stm32_rcc_gpio_clock_port_t *stm32f401re_gpio_clock_ports(size_t *count);
 const stm32_gpio_config_port_t *stm32f401re_gpio_config_ports(size_t *count);

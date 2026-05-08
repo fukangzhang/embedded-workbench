@@ -25,10 +25,13 @@ bool stm32_board_gpio_init_alarm_outputs(
     }
 
     if (effective_config == 0) {
+        /* 调用者不传配置时使用保守默认值：推挽、低速、无上下拉。
+         * 这样上层只想“把告警输出脚初始化成输出”时，不必先理解所有电气选项。 */
         default_config = stm32_gpio_output_config_default();
         effective_config = &default_config;
     }
 
+    /* 三个输出脚来自 board_profile；本模块只负责按统一规则逐个初始化。 */
     return init_output_pin(&profile->alarm_led, clock_context, gpio_context, effective_config) &&
            init_output_pin(&profile->alarm_buzzer, clock_context, gpio_context, effective_config) &&
            init_output_pin(&profile->alarm_actuator, clock_context, gpio_context, effective_config);
