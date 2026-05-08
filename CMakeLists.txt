@@ -35,12 +35,18 @@ target_include_directories(embedded_freestanding_support
 
 add_library(embedded_drivers
     drivers/src/command_parser.c
+    drivers/src/digital_output.c
     drivers/src/sensor_sample.c
 )
 
 target_include_directories(embedded_drivers
     PUBLIC
         drivers/include
+)
+
+target_link_libraries(embedded_drivers
+    PUBLIC
+        embedded_bsp
 )
 
 add_library(embedded_app
@@ -202,6 +208,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME command_parser COMMAND test_command_parser)
+
+    add_executable(test_digital_output
+        tests/test_digital_output.c
+    )
+
+    target_link_libraries(test_digital_output
+        PRIVATE
+            embedded_drivers
+    )
+
+    add_test(NAME digital_output COMMAND test_digital_output)
 
     add_executable(test_command_handler
         tests/test_command_handler.c
