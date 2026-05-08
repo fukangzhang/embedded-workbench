@@ -18,11 +18,17 @@ target_include_directories(embedded_drivers
 
 add_library(embedded_app
     app/src/app_info.c
+    app/src/alarm_state.c
 )
 
 target_include_directories(embedded_app
     PUBLIC
         app/include
+)
+
+target_link_libraries(embedded_app
+    PUBLIC
+        embedded_drivers
 )
 
 add_executable(host_sim
@@ -55,3 +61,14 @@ target_link_libraries(test_sensor_sample
 )
 
 add_test(NAME sensor_sample COMMAND test_sensor_sample)
+
+add_executable(test_alarm_state
+    tests/test_alarm_state.c
+)
+
+target_link_libraries(test_alarm_state
+    PRIVATE
+        embedded_app
+)
+
+add_test(NAME alarm_state COMMAND test_alarm_state)
