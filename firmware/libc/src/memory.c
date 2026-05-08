@@ -45,3 +45,18 @@ void *memmove(void *destination, const void *source, size_t count)
 
     return destination;
 }
+
+void __aeabi_memclr(void *destination, size_t count)
+{
+    (void)memset(destination, 0, count);
+}
+
+void __aeabi_memclr4(void *destination, size_t count)
+{
+    __aeabi_memclr(destination, count);
+}
+
+void __aeabi_memclr8(void *destination, size_t count)
+{
+    __aeabi_memclr(destination, count);
+}
