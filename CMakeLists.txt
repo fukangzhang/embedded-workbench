@@ -53,6 +53,14 @@ add_library(embedded_app
 
 if(EW_USE_FREERTOS)
     include(cmake/FreeRTOSKernel.cmake)
+    target_sources(embedded_app
+        PRIVATE
+            app/src/rtos_port_freertos.c
+    )
+    target_link_libraries(embedded_app
+        PRIVATE
+            freertos_kernel
+    )
 endif()
 
 target_include_directories(embedded_app
