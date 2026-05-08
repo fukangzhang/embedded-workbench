@@ -13,6 +13,7 @@ typedef struct {
     QueueHandle_t sensor_sample_queue;
     QueueHandle_t command_queue;
     QueueHandle_t response_queue;
+    QueueHandle_t alarm_event_queue;
     TaskHandle_t sensor_acquire_task;
     TaskHandle_t env_process_task;
     TaskHandle_t communication_task;
