@@ -7,6 +7,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 option(EW_BUILD_HOST_TOOLS "Build host-side simulation tools" ON)
 option(EW_BUILD_TESTS "Build host-side tests" ON)
+option(EW_BUILD_FIRMWARE "Build target firmware ELF" OFF)
 
 if(EW_BUILD_TESTS)
     enable_testing()
@@ -57,6 +58,33 @@ if(EW_BUILD_HOST_TOOLS)
     target_link_libraries(host_sim
         PRIVATE
             embedded_app
+    )
+endif()
+
+if(EW_BUILD_FIRMWARE)
+    add_executable(embedded_firmware
+        firmware/src/main.c
+        firmware/startup/startup_stm32f401re.c
+    )
+
+    target_link_libraries(embedded_firmware
+        PRIVATE
+            embedded_app
+            embedded_bsp
+            embedded_drivers
+    )
+
+    target_link_options(embedded_firmware
+        PRIVATE
+            -nostdlib
+            -Wl,-T,${CMAKE_SOURCE_DIR}/firmware/linker/stm32f401re.ld
+            -Wl,-e,Reset_Handler
+            -Wl,--gc-sections
+    )
+
+    set_target_properties(embedded_firmware PROPERTIES
+        OUTPUT_NAME embedded_firmware
+        SUFFIX ".elf"
     )
 endif()
 
