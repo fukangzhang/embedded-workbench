@@ -7,6 +7,7 @@
 #include "queue.h"
 #include "task.h"
 
+#include "embedded_workbench/alarm_output_sink.h"
 #include "embedded_workbench/rtos_port.h"
 
 typedef struct {
@@ -14,6 +15,7 @@ typedef struct {
     QueueHandle_t command_queue;
     QueueHandle_t response_queue;
     QueueHandle_t alarm_event_queue;
+    alarm_output_sink_t *alarm_output_sink;
     TaskHandle_t sensor_acquire_task;
     TaskHandle_t env_process_task;
     TaskHandle_t communication_task;
