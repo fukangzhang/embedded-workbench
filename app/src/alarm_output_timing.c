@@ -25,11 +25,14 @@ bool alarm_output_indicator_is_on(
         return true;
     }
 
+    /* period_ms 为 0 表示常亮。这样输出策略可以复用同一接口表达“闪烁”和“持续打开”。 */
     if (command->period_ms == 0u) {
         *is_on = true;
         return true;
     }
 
+    /* 用取模得到当前闪烁周期内的位置，前半周期亮、后半周期灭。
+     * +1 后再除以 2 可让奇数周期也尽量保持接近 50% 占空比。 */
     phase_ms = elapsed_ms % command->period_ms;
     on_window_ms = ((uint32_t)command->period_ms + 1u) / 2u;
     *is_on = phase_ms < on_window_ms;

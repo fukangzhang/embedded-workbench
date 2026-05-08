@@ -26,6 +26,7 @@ bool digital_output_write(
     const board_pin_t *pin,
     digital_output_level_t level)
 {
+    /* 这是驱动层的公共防线：检查控制器、引脚和电平后，再委托给具体板级实现。 */
     if (!controller_is_ready(controller) ||
         !pin_is_valid(pin) ||
         !level_is_valid(level)) {

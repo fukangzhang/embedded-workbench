@@ -27,6 +27,7 @@ int main(void)
 {
     command_t command;
 
+    /* 先确认初始化会把命令放到安全的 INVALID 状态。 */
     command_init(&command);
     if (expect_int(command.type, COMMAND_TYPE_INVALID) != 0) {
         return 1;
@@ -54,6 +55,7 @@ int main(void)
         return 5;
     }
 
+    /* SET 覆盖正数、负数和不同阈值名，确保 token 解析和 int32 解析都被验证。 */
     if (expect_true(command_parse("SET LIGHT_ALARM_LOW 30", &command)) != 0 ||
         expect_int(command.threshold, COMMAND_THRESHOLD_LIGHT_ALARM_LOW) != 0 ||
         expect_int(command.value, 30) != 0) {
@@ -82,6 +84,7 @@ int main(void)
         return 11;
     }
 
+    /* 这两个边界值刚好越过 int32 范围，解析器必须拒绝而不是溢出。 */
     if (expect_false(command_parse("SET TEMP_WARN -2147483649", &command)) != 0) {
         return 12;
     }

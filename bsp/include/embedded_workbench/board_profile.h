@@ -15,6 +15,7 @@ typedef struct {
     const char *function;
 } board_pin_t;
 
+/* 板卡描述只记录项目关心的硬件事实，不在这里做实际初始化。 */
 typedef struct {
     board_id_t id;
     const char *name;

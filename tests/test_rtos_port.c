@@ -75,6 +75,7 @@ int main(void)
     command_init(&command);
     command.type = COMMAND_TYPE_GET_STATUS;
 
+    /* fake 端口用于确认 rtos_port 包装层会调用 ops，并维护基本的输入校验。 */
     if (expect_true(rtos_port_is_valid(&port)) != 0) {
         return 1;
     }
@@ -94,6 +95,7 @@ int main(void)
         return 4;
     }
 
+    /* 无效采样/无效命令不能进入 fake 计数，说明包装层在委托前拦住了坏输入。 */
     if (expect_true(rtos_port_send_command(&port, &command)) != 0 ||
         expect_uint(context.command_count, 1u) != 0) {
         return 5;

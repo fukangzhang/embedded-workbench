@@ -6,6 +6,7 @@ bool alarm_output_command_for_state(alarm_state_t state, alarm_output_command_t 
         return false;
     }
 
+    /* 先写入安全默认值：后面的 case 只覆盖需要打开的输出。 */
     command->indicator = ALARM_OUTPUT_INDICATOR_OFF;
     command->buzzer_enabled = false;
     command->actuator_enabled = false;
@@ -15,16 +16,19 @@ bool alarm_output_command_for_state(alarm_state_t state, alarm_output_command_t 
     case ALARM_STATE_NORMAL:
         return true;
     case ALARM_STATE_WARNING:
+        /* warning 只给视觉提示，避免轻微异常时蜂鸣器和执行器过早动作。 */
         command->indicator = ALARM_OUTPUT_INDICATOR_SLOW_BLINK;
         command->period_ms = 1000u;
         return true;
     case ALARM_STATE_ALARM:
+        /* alarm 同时打开灯、蜂鸣器和执行器，是最强输出策略。 */
         command->indicator = ALARM_OUTPUT_INDICATOR_FAST_BLINK;
         command->buzzer_enabled = true;
         command->actuator_enabled = true;
         command->period_ms = 250u;
         return true;
     case ALARM_STATE_SENSOR_FAULT:
+        /* 传感器故障使用独立闪烁模式，并保留蜂鸣器提示，但不驱动执行器。 */
         command->indicator = ALARM_OUTPUT_INDICATOR_FAULT_BLINK;
         command->buzzer_enabled = true;
         command->period_ms = 500u;

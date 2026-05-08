@@ -15,6 +15,7 @@ static QueueHandle_t create_queue(rtos_queue_id_t id, size_t expected_item_size)
 {
     const rtos_queue_descriptor_t *descriptor = rtos_task_model_find_queue(id);
 
+    /* 创建队列前核对模型中的 item_size，避免发送方和接收方对消息大小理解不一致。 */
     if (descriptor == 0 ||
         descriptor->length == 0u ||
         descriptor->item_size != expected_item_size) {
@@ -73,6 +74,7 @@ static void env_process_task(void *parameter)
     freertos_alarm_event_t event;
 
     for (;;) {
+        /* 环境处理任务阻塞等待传感器采样，收到后更新状态并把状态事件发给输出任务。 */
         if (context != 0 &&
             context->sensor_sample_queue != 0 &&
             xQueueReceive(context->sensor_sample_queue, &sample, portMAX_DELAY) == pdPASS) {
@@ -92,6 +94,7 @@ static void communication_task(void *parameter)
     rtos_response_message_t response = {{0}};
 
     for (;;) {
+        /* 当前通信任务还是骨架：收到命令后回一个 OK，用来验证队列链路。 */
         if (context != 0 &&
             context->command_queue != 0 &&
             context->response_queue != 0 &&
@@ -118,12 +121,14 @@ static void alarm_output_task(void *parameter)
     for (;;) {
         if (context != 0 &&
             context->alarm_event_queue != 0) {
+            /* 第一次没有命令时永久等待；已有命令后周期性超时，用超时机会刷新闪烁相位。 */
             receive_result = xQueueReceive(
                 context->alarm_event_queue,
                 &event,
                 has_command ? (TickType_t)ALARM_OUTPUT_REFRESH_PERIOD_MS : portMAX_DELAY);
 
             if (receive_result == pdPASS) {
+                /* 新状态事件会重新计算输出命令，并从 0 开始计时一个新的闪烁周期。 */
                 has_command = alarm_output_command_for_state(event.state, &command);
                 elapsed_ms = 0u;
             } else if (has_command) {
@@ -135,6 +140,7 @@ static void alarm_output_task(void *parameter)
                 alarm_output_indicator_is_on(&command, elapsed_ms, &indicator_is_on)) {
                 rendered_command = command;
                 if (!indicator_is_on) {
+                    /* 闪烁的“灭”阶段只关闭指示灯，不改变蜂鸣器和执行器策略。 */
                     rendered_command.indicator = ALARM_OUTPUT_INDICATOR_OFF;
                 }
                 (void)alarm_output_sink_apply(context->alarm_output_sink, &rendered_command);
@@ -157,6 +163,7 @@ static bool create_task_from_model(
     if (*handle != 0) {
         return true;
     }
+    /* 任务参数来自集中模型；这里拒绝不完整的描述，避免创建出难以调试的 RTOS 任务。 */
     if (descriptor == 0 ||
         descriptor->name == 0 ||
         descriptor->stack_words == 0u ||
@@ -239,6 +246,7 @@ bool freertos_rtos_port_init(rtos_port_t *port, freertos_rtos_port_context_t *co
         return false;
     }
 
+    /* init 允许 context 中预先放入队列句柄，便于测试或后续接入静态分配队列。 */
     if (context->sensor_sample_queue == 0) {
         context->sensor_sample_queue = create_queue(RTOS_QUEUE_SENSOR_SAMPLE, sizeof(sensor_sample_t));
     }

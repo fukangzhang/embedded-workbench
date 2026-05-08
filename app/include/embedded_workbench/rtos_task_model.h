@@ -34,6 +34,7 @@ typedef struct {
     uint8_t length;
 } rtos_queue_descriptor_t;
 
+/* 任务/队列模型集中描述 FreeRTOS 资源，便于测试和后续移植时统一调整。 */
 size_t rtos_task_model_task_count(void);
 const rtos_task_descriptor_t *rtos_task_model_task_at(size_t index);
 const rtos_task_descriptor_t *rtos_task_model_find_task(rtos_task_id_t id);

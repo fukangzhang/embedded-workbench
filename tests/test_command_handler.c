@@ -29,6 +29,7 @@ int main(void)
     command_t command;
     command_handler_result_t result;
 
+    /* 查询类命令只设置请求标志，不应该改变配置。 */
     command_init(&command);
     command.type = COMMAND_TYPE_GET_STATUS;
     result = command_handler_handle(&command, &config);
@@ -75,6 +76,7 @@ int main(void)
         return 5;
     }
 
+    /* 修改阈值时既要检查类型范围，也要检查修改后的整体配置仍然有合法顺序。 */
     command_init(&command);
     command.type = COMMAND_TYPE_SET_THRESHOLD;
     command.threshold = COMMAND_THRESHOLD_TEMP_WARNING_HIGH;
@@ -85,6 +87,7 @@ int main(void)
         return 6;
     }
 
+    /* 失败的 SET 不应污染旧配置，因此这里继续检查 temp warning 仍是上一次成功值。 */
     command_init(&command);
     command.type = COMMAND_TYPE_SET_THRESHOLD;
     command.threshold = COMMAND_THRESHOLD_HUMIDITY_WARNING_HIGH;

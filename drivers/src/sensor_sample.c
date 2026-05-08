@@ -22,6 +22,7 @@ bool sensor_sample_is_valid(const sensor_sample_t *sample)
         return false;
     }
 
+    /* 这里验证的是项目当前支持的物理范围，不是传感器芯片的完整规格。 */
     if (sample->temperature_c_x10 < SENSOR_TEMPERATURE_MIN_C_X10 ||
         sample->temperature_c_x10 > SENSOR_TEMPERATURE_MAX_C_X10) {
         return false;

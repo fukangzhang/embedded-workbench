@@ -36,6 +36,7 @@ int main(void)
     alarm_output_command_t command;
     bool is_on = true;
 
+    /* NORMAL 没有闪烁输出，无论经过多久指示灯都应保持关闭。 */
     if (expect_true(alarm_output_command_for_state(ALARM_STATE_NORMAL, &command)) != 0 ||
         expect_indicator_state(&command, 0u, false) != 0 ||
         expect_indicator_state(&command, 1000u, false) != 0) {
@@ -51,6 +52,7 @@ int main(void)
         return 2;
     }
 
+    /* warning/alarm/fault 分别验证半周期边界，确保取模和 50% 占空比逻辑正确。 */
     if (expect_true(alarm_output_command_for_state(ALARM_STATE_ALARM, &command)) != 0 ||
         expect_indicator_state(&command, 0u, true) != 0 ||
         expect_indicator_state(&command, 124u, true) != 0 ||
@@ -75,6 +77,7 @@ int main(void)
         return 5;
     }
 
+    /* 无效 indicator、空命令、空输出指针都应该被拒绝，避免调用者读到未定义结果。 */
     command.indicator = (alarm_output_indicator_t)99;
     if (expect_false(alarm_output_indicator_is_on(&command, 0u, &is_on)) != 0 ||
         expect_false(alarm_output_indicator_is_on(0, 0u, &is_on)) != 0 ||

@@ -1,6 +1,7 @@
 #include "embedded_workbench/board_profile.h"
 
 static const board_profile_t profiles[] = {
+    /* 两块 NUCLEO 板先共用一组项目占位引脚，后续接真实外设时只需要更新 profile。 */
     {
         BOARD_ID_NUCLEO_F401RE,
         "NUCLEO-F401RE",
@@ -36,6 +37,7 @@ const board_profile_t *board_profile_find(board_id_t id)
 {
     size_t index = 0;
 
+    /* profile 数量很小，线性查找最直观，也避免引入额外表结构。 */
     for (index = 0; index < board_profile_count(); index++) {
         if (profiles[index].id == id) {
             return &profiles[index];
@@ -69,6 +71,7 @@ static bool pin_is_valid(const board_pin_t *pin)
 
 bool board_profile_is_valid(const board_profile_t *profile)
 {
+    /* profile 是后续 BSP/driver 初始化的事实来源，必须确保所有字符串和关键引脚都存在。 */
     return profile != 0 &&
            profile->name != 0 &&
            profile->mcu != 0 &&

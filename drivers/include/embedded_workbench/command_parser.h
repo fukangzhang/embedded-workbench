@@ -30,6 +30,8 @@ typedef struct {
     int32_t value;
 } command_t;
 
+/* 解析面向串口/控制台的简单文本命令。
+ * 解析失败时保持 INVALID 语义，避免半解析命令被后续逻辑误用。 */
 void command_init(command_t *command);
 bool command_parse(const char *line, command_t *command);
 const char *command_type_name(command_type_t type);
