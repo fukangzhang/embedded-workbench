@@ -5,7 +5,12 @@ project(embedded_workbench C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-enable_testing()
+option(EW_BUILD_HOST_TOOLS "Build host-side simulation tools" ON)
+option(EW_BUILD_TESTS "Build host-side tests" ON)
+
+if(EW_BUILD_TESTS)
+    enable_testing()
+endif()
 
 add_library(embedded_bsp
     bsp/src/board_profile.c
@@ -44,100 +49,107 @@ target_link_libraries(embedded_app
         embedded_drivers
 )
 
-add_executable(host_sim
-    tools/host_sim/main.c
-)
+if(EW_BUILD_HOST_TOOLS)
+    add_executable(host_sim
+        tools/host_sim/main.c
+    )
 
-target_link_libraries(host_sim
-    PRIVATE
-        embedded_app
-)
+    target_link_libraries(host_sim
+        PRIVATE
+            embedded_app
+    )
+endif()
 
-add_executable(test_app_info
-    tests/test_app_info.c
-)
+if(EW_BUILD_TESTS)
+    add_executable(test_app_info
+        tests/test_app_info.c
+    )
 
-target_link_libraries(test_app_info
-    PRIVATE
-        embedded_app
-)
+    target_link_libraries(test_app_info
+        PRIVATE
+            embedded_app
+    )
 
-add_test(NAME app_info COMMAND test_app_info)
-add_test(NAME host_sim_smoke COMMAND host_sim)
+    add_test(NAME app_info COMMAND test_app_info)
 
-add_executable(test_sensor_sample
-    tests/test_sensor_sample.c
-)
+    if(EW_BUILD_HOST_TOOLS)
+        add_test(NAME host_sim_smoke COMMAND host_sim)
+    endif()
 
-target_link_libraries(test_sensor_sample
-    PRIVATE
-        embedded_drivers
-)
+    add_executable(test_sensor_sample
+        tests/test_sensor_sample.c
+    )
 
-add_test(NAME sensor_sample COMMAND test_sensor_sample)
+    target_link_libraries(test_sensor_sample
+        PRIVATE
+            embedded_drivers
+    )
 
-add_executable(test_alarm_state
-    tests/test_alarm_state.c
-)
+    add_test(NAME sensor_sample COMMAND test_sensor_sample)
 
-target_link_libraries(test_alarm_state
-    PRIVATE
-        embedded_app
-)
+    add_executable(test_alarm_state
+        tests/test_alarm_state.c
+    )
 
-add_test(NAME alarm_state COMMAND test_alarm_state)
+    target_link_libraries(test_alarm_state
+        PRIVATE
+            embedded_app
+    )
 
-add_executable(test_command_parser
-    tests/test_command_parser.c
-)
+    add_test(NAME alarm_state COMMAND test_alarm_state)
 
-target_link_libraries(test_command_parser
-    PRIVATE
-        embedded_drivers
-)
+    add_executable(test_command_parser
+        tests/test_command_parser.c
+    )
 
-add_test(NAME command_parser COMMAND test_command_parser)
+    target_link_libraries(test_command_parser
+        PRIVATE
+            embedded_drivers
+    )
 
-add_executable(test_command_handler
-    tests/test_command_handler.c
-)
+    add_test(NAME command_parser COMMAND test_command_parser)
 
-target_link_libraries(test_command_handler
-    PRIVATE
-        embedded_app
-)
+    add_executable(test_command_handler
+        tests/test_command_handler.c
+    )
 
-add_test(NAME command_handler COMMAND test_command_handler)
+    target_link_libraries(test_command_handler
+        PRIVATE
+            embedded_app
+    )
 
-add_executable(test_response_format
-    tests/test_response_format.c
-)
+    add_test(NAME command_handler COMMAND test_command_handler)
 
-target_link_libraries(test_response_format
-    PRIVATE
-        embedded_app
-)
+    add_executable(test_response_format
+        tests/test_response_format.c
+    )
 
-add_test(NAME response_format COMMAND test_response_format)
+    target_link_libraries(test_response_format
+        PRIVATE
+            embedded_app
+    )
 
-add_executable(test_rtos_task_model
-    tests/test_rtos_task_model.c
-)
+    add_test(NAME response_format COMMAND test_response_format)
 
-target_link_libraries(test_rtos_task_model
-    PRIVATE
-        embedded_app
-)
+    add_executable(test_rtos_task_model
+        tests/test_rtos_task_model.c
+    )
 
-add_test(NAME rtos_task_model COMMAND test_rtos_task_model)
+    target_link_libraries(test_rtos_task_model
+        PRIVATE
+            embedded_app
+    )
 
-add_executable(test_board_profile
-    tests/test_board_profile.c
-)
+    add_test(NAME rtos_task_model COMMAND test_rtos_task_model)
 
-target_link_libraries(test_board_profile
-    PRIVATE
-        embedded_bsp
-)
+    add_executable(test_board_profile
+        tests/test_board_profile.c
+    )
 
-add_test(NAME board_profile COMMAND test_board_profile)
+    target_link_libraries(test_board_profile
+        PRIVATE
+            embedded_bsp
+    )
+
+    add_test(NAME board_profile COMMAND test_board_profile)
+endif()

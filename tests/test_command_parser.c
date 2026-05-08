@@ -78,20 +78,28 @@ int main(void)
         return 10;
     }
 
-    if (expect_false(command_parse(0, &command)) != 0) {
+    if (expect_false(command_parse("SET TEMP_WARN 2147483648", &command)) != 0) {
         return 11;
     }
 
-    if (expect_false(command_parse("STATUS?", 0)) != 0) {
+    if (expect_false(command_parse("SET TEMP_WARN -2147483649", &command)) != 0) {
         return 12;
     }
 
-    if (expect_string(command_type_name(COMMAND_TYPE_SET_THRESHOLD), "set-threshold") != 0) {
+    if (expect_false(command_parse(0, &command)) != 0) {
         return 13;
     }
 
-    if (expect_string(command_threshold_name(COMMAND_THRESHOLD_SMOKE_ALARM), "smoke-alarm") != 0) {
+    if (expect_false(command_parse("STATUS?", 0)) != 0) {
         return 14;
+    }
+
+    if (expect_string(command_type_name(COMMAND_TYPE_SET_THRESHOLD), "set-threshold") != 0) {
+        return 15;
+    }
+
+    if (expect_string(command_threshold_name(COMMAND_THRESHOLD_SMOKE_ALARM), "smoke-alarm") != 0) {
+        return 16;
     }
 
     return 0;
