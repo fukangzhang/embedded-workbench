@@ -1,4 +1,7 @@
+#include "embedded_workbench/alarm_output.h"
+#include "embedded_workbench/alarm_output_digital_sink.h"
 #include "embedded_workbench/alarm_state.h"
+#include "embedded_workbench/board_digital_output.h"
 #include "embedded_workbench/board_profile.h"
 #include "embedded_workbench/command_handler.h"
 #include "embedded_workbench/command_parser.h"
@@ -14,6 +17,35 @@
 static volatile alarm_state_t firmware_last_state = ALARM_STATE_NORMAL;
 static volatile int firmware_self_check = 0;
 uint32_t SystemCoreClock = 16000000u;
+
+static board_digital_output_context_t firmware_board_output_context = {0};
+static digital_output_controller_t firmware_digital_output = {0};
+static alarm_output_digital_sink_context_t firmware_alarm_output_digital_context = {0};
+static alarm_output_sink_t firmware_alarm_output_sink = {0};
+
+static bool firmware_alarm_output_self_check(void)
+{
+    const board_profile_t *profile = board_profile_default();
+    alarm_output_command_t command;
+    digital_output_level_t led_level = DIGITAL_OUTPUT_LEVEL_LOW;
+    digital_output_level_t buzzer_level = DIGITAL_OUTPUT_LEVEL_LOW;
+    digital_output_level_t actuator_level = DIGITAL_OUTPUT_LEVEL_LOW;
+
+    return board_digital_output_init(&firmware_digital_output, &firmware_board_output_context, profile) &&
+           alarm_output_digital_sink_init(
+               &firmware_alarm_output_sink,
+               &firmware_alarm_output_digital_context,
+               &firmware_digital_output,
+               profile) &&
+           alarm_output_command_for_state(ALARM_STATE_ALARM, &command) &&
+           alarm_output_sink_apply(&firmware_alarm_output_sink, &command) &&
+           board_digital_output_get_level(&firmware_board_output_context, &profile->alarm_led, &led_level) &&
+           board_digital_output_get_level(&firmware_board_output_context, &profile->alarm_buzzer, &buzzer_level) &&
+           board_digital_output_get_level(&firmware_board_output_context, &profile->alarm_actuator, &actuator_level) &&
+           led_level == DIGITAL_OUTPUT_LEVEL_HIGH &&
+           buzzer_level == DIGITAL_OUTPUT_LEVEL_HIGH &&
+           actuator_level == DIGITAL_OUTPUT_LEVEL_HIGH;
+}
 
 #if defined(EW_FIRMWARE_USE_FREERTOS)
 static freertos_rtos_port_context_t firmware_rtos_context = {0};
@@ -63,6 +95,7 @@ int main(void)
         rtos_task_model_is_valid() &&
         result.status_requested &&
         response_format_status(response, sizeof(response), firmware_last_state, &sample) &&
+        firmware_alarm_output_self_check() &&
         freertos_ready) {
         firmware_self_check = 1;
     } else {
