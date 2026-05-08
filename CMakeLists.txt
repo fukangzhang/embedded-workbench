@@ -54,6 +54,7 @@ add_library(embedded_app
     app/src/alarm_output_digital_sink.c
     app/src/alarm_output.c
     app/src/alarm_output_sink.c
+    app/src/alarm_output_timing.c
     app/src/app_info.c
     app/src/alarm_state.c
     app/src/command_handler.c
@@ -210,6 +211,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME alarm_output_digital_sink COMMAND test_alarm_output_digital_sink)
+
+    add_executable(test_alarm_output_timing
+        tests/test_alarm_output_timing.c
+    )
+
+    target_link_libraries(test_alarm_output_timing
+        PRIVATE
+            embedded_app
+    )
+
+    add_test(NAME alarm_output_timing COMMAND test_alarm_output_timing)
 
     add_executable(test_command_parser
         tests/test_command_parser.c
