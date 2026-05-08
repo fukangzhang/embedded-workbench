@@ -34,6 +34,7 @@ target_include_directories(embedded_freestanding_support
 )
 
 add_library(embedded_drivers
+    drivers/src/board_digital_output.c
     drivers/src/command_parser.c
     drivers/src/digital_output.c
     drivers/src/sensor_sample.c
@@ -231,6 +232,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME digital_output COMMAND test_digital_output)
+
+    add_executable(test_board_digital_output
+        tests/test_board_digital_output.c
+    )
+
+    target_link_libraries(test_board_digital_output
+        PRIVATE
+            embedded_drivers
+    )
+
+    add_test(NAME board_digital_output COMMAND test_board_digital_output)
 
     add_executable(test_command_handler
         tests/test_command_handler.c
