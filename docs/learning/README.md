@@ -159,6 +159,7 @@
 看完要能解释：
 
 - BSP 和 app 的边界在哪里
+- `alarm_led`、`alarm_buzzer`、`alarm_actuator` 只是板级映射，不是 GPIO 驱动
 - `firmware/src/main.c` 现在做了哪些自检
 - startup 文件和 linker script 是什么角色
 - 为什么当前 Zig 路径是构建验证，不是最终板上工具链

@@ -11,6 +11,7 @@ static const board_profile_t profiles[] = {
         "I2C1",
         {"PA", 5u, "LD2 user LED / alarm indicator"},
         {"PB", 6u, "external buzzer placeholder"},
+        {"PB", 7u, "external actuator enable placeholder"},
     },
     {
         BOARD_ID_NUCLEO_F103RB,
@@ -22,6 +23,7 @@ static const board_profile_t profiles[] = {
         "I2C1",
         {"PA", 5u, "LD2 user LED / alarm indicator"},
         {"PB", 6u, "external buzzer placeholder"},
+        {"PB", 7u, "external actuator enable placeholder"},
     },
 };
 
@@ -75,5 +77,6 @@ bool board_profile_is_valid(const board_profile_t *profile)
            profile->console_uart != 0 &&
            profile->sensor_bus != 0 &&
            pin_is_valid(&profile->alarm_led) &&
-           pin_is_valid(&profile->alarm_buzzer);
+           pin_is_valid(&profile->alarm_buzzer) &&
+           pin_is_valid(&profile->alarm_actuator);
 }

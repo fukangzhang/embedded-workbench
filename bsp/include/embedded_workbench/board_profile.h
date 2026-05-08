@@ -25,6 +25,7 @@ typedef struct {
     const char *sensor_bus;
     board_pin_t alarm_led;
     board_pin_t alarm_buzzer;
+    board_pin_t alarm_actuator;
 } board_profile_t;
 
 const board_profile_t *board_profile_default(void);
