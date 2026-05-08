@@ -8,6 +8,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 option(EW_BUILD_HOST_TOOLS "Build host-side simulation tools" ON)
 option(EW_BUILD_TESTS "Build host-side tests" ON)
 option(EW_BUILD_FIRMWARE "Build target firmware ELF" OFF)
+option(EW_USE_FREERTOS "Link target firmware with external FreeRTOS-Kernel" OFF)
 
 if(EW_BUILD_TESTS)
     enable_testing()
@@ -20,6 +21,15 @@ add_library(embedded_bsp
 target_include_directories(embedded_bsp
     PUBLIC
         bsp/include
+)
+
+add_library(embedded_freestanding_support
+    firmware/libc/src/memory.c
+)
+
+target_include_directories(embedded_freestanding_support
+    PUBLIC
+        firmware/libc/include
 )
 
 add_library(embedded_drivers
@@ -40,6 +50,10 @@ add_library(embedded_app
     app/src/rtos_task_model.c
     app/src/rtos_port.c
 )
+
+if(EW_USE_FREERTOS)
+    include(cmake/FreeRTOSKernel.cmake)
+endif()
 
 target_include_directories(embedded_app
     PUBLIC
@@ -73,7 +87,19 @@ if(EW_BUILD_FIRMWARE)
             embedded_app
             embedded_bsp
             embedded_drivers
+            embedded_freestanding_support
     )
+
+    if(EW_USE_FREERTOS)
+        target_link_libraries(embedded_firmware
+            PRIVATE
+                freertos_kernel
+        )
+        target_compile_definitions(embedded_firmware
+            PRIVATE
+                EW_FIRMWARE_USE_FREERTOS=1
+        )
+    endif()
 
     target_link_options(embedded_firmware
         PRIVATE

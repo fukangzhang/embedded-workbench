@@ -6,8 +6,14 @@
 #include "embedded_workbench/rtos_task_model.h"
 #include "embedded_workbench/sensor_sample.h"
 
+#if defined(EW_FIRMWARE_USE_FREERTOS)
+#include "FreeRTOS.h"
+#include "task.h"
+#endif
+
 static volatile alarm_state_t firmware_last_state = ALARM_STATE_NORMAL;
 static volatile int firmware_self_check = 0;
+uint32_t SystemCoreClock = 16000000u;
 
 int main(void)
 {
@@ -31,6 +37,10 @@ int main(void)
     } else {
         firmware_self_check = -1;
     }
+
+#if defined(EW_FIRMWARE_USE_FREERTOS)
+    (void)xTaskGetSchedulerState();
+#endif
 
     while (1) {
     }
