@@ -1,8 +1,6 @@
 #include "embedded_workbench/command_parser.h"
 
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stddef.h>
 
 void command_init(command_t *command)
 {
@@ -23,6 +21,20 @@ static bool is_space_char(char value)
 static bool is_line_end(char value)
 {
     return value == '\0' || value == '\r' || value == '\n';
+}
+
+static bool string_equals(const char *left, const char *right)
+{
+    while (*left != '\0' && *right != '\0') {
+        if (*left != *right) {
+            return false;
+        }
+
+        left++;
+        right++;
+    }
+
+    return *left == '\0' && *right == '\0';
 }
 
 static const char *skip_spaces(const char *cursor)
@@ -62,21 +74,21 @@ static bool has_only_line_end_after_spaces(const char *cursor)
 
 static bool parse_threshold_name(const char *text, command_threshold_t *threshold)
 {
-    if (strcmp(text, "TEMP_WARN") == 0) {
+    if (string_equals(text, "TEMP_WARN")) {
         *threshold = COMMAND_THRESHOLD_TEMP_WARNING_HIGH;
-    } else if (strcmp(text, "TEMP_ALARM") == 0) {
+    } else if (string_equals(text, "TEMP_ALARM")) {
         *threshold = COMMAND_THRESHOLD_TEMP_ALARM_HIGH;
-    } else if (strcmp(text, "HUM_WARN") == 0) {
+    } else if (string_equals(text, "HUM_WARN")) {
         *threshold = COMMAND_THRESHOLD_HUMIDITY_WARNING_HIGH;
-    } else if (strcmp(text, "HUM_ALARM") == 0) {
+    } else if (string_equals(text, "HUM_ALARM")) {
         *threshold = COMMAND_THRESHOLD_HUMIDITY_ALARM_HIGH;
-    } else if (strcmp(text, "LIGHT_WARN_LOW") == 0) {
+    } else if (string_equals(text, "LIGHT_WARN_LOW")) {
         *threshold = COMMAND_THRESHOLD_LIGHT_WARNING_LOW;
-    } else if (strcmp(text, "LIGHT_ALARM_LOW") == 0) {
+    } else if (string_equals(text, "LIGHT_ALARM_LOW")) {
         *threshold = COMMAND_THRESHOLD_LIGHT_ALARM_LOW;
-    } else if (strcmp(text, "SMOKE_WARN") == 0) {
+    } else if (string_equals(text, "SMOKE_WARN")) {
         *threshold = COMMAND_THRESHOLD_SMOKE_WARNING;
-    } else if (strcmp(text, "SMOKE_ALARM") == 0) {
+    } else if (string_equals(text, "SMOKE_ALARM")) {
         *threshold = COMMAND_THRESHOLD_SMOKE_ALARM;
     } else {
         *threshold = COMMAND_THRESHOLD_NONE;
@@ -88,19 +100,48 @@ static bool parse_threshold_name(const char *text, command_threshold_t *threshol
 
 static bool parse_int32(const char *cursor, int32_t *value, const char **end_out)
 {
-    char *end = 0;
-    long parsed = 0;
+    bool negative = false;
+    uint32_t parsed = 0u;
+    bool has_digit = false;
 
-    errno = 0;
     cursor = skip_spaces(cursor);
-    parsed = strtol(cursor, &end, 10);
 
-    if (cursor == end || errno != 0) {
+    if (*cursor == '-') {
+        negative = true;
+        cursor++;
+    } else if (*cursor == '+') {
+        cursor++;
+    }
+
+    while (*cursor >= '0' && *cursor <= '9') {
+        uint32_t digit = (uint32_t)(*cursor - '0');
+
+        has_digit = true;
+
+        if (!negative && parsed > (2147483647u - digit) / 10u) {
+            return false;
+        }
+
+        if (negative && parsed > (2147483648u - digit) / 10u) {
+            return false;
+        }
+
+        parsed = parsed * 10u + digit;
+        cursor++;
+    }
+
+    if (!has_digit) {
         return false;
     }
 
-    *value = (int32_t)parsed;
-    *end_out = end;
+    if (negative && parsed == 2147483648u) {
+        *value = (-2147483647 - 1);
+    } else if (negative) {
+        *value = -(int32_t)parsed;
+    } else {
+        *value = (int32_t)parsed;
+    }
+    *end_out = cursor;
     return true;
 }
 
@@ -120,7 +161,7 @@ bool command_parse(const char *line, command_t *command)
         return false;
     }
 
-    if (strcmp(token, "STATUS?") == 0) {
+    if (string_equals(token, "STATUS?")) {
         if (!has_only_line_end_after_spaces(cursor)) {
             return false;
         }
@@ -129,7 +170,7 @@ bool command_parse(const char *line, command_t *command)
         return true;
     }
 
-    if (strcmp(token, "CONFIG?") == 0) {
+    if (string_equals(token, "CONFIG?")) {
         if (!has_only_line_end_after_spaces(cursor)) {
             return false;
         }
@@ -138,7 +179,7 @@ bool command_parse(const char *line, command_t *command)
         return true;
     }
 
-    if (strcmp(token, "CLEAR_ALARM") == 0) {
+    if (string_equals(token, "CLEAR_ALARM")) {
         if (!has_only_line_end_after_spaces(cursor)) {
             return false;
         }
@@ -147,7 +188,7 @@ bool command_parse(const char *line, command_t *command)
         return true;
     }
 
-    if (strcmp(token, "SET") == 0) {
+    if (string_equals(token, "SET")) {
         int32_t value = 0;
         command_threshold_t threshold = COMMAND_THRESHOLD_NONE;
 
