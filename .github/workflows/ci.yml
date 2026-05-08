@@ -148,3 +148,21 @@ jobs:
 
       - name: Build FreeRTOS firmware
         run: cmake --build build-fw-rtos
+
+      - name: Configure FreeRTOS scheduler firmware
+        env:
+          ZIG_EXE: ${{ steps.zig.outputs.zig_exe }}
+          ZIG_AR: ${{ steps.zig.outputs.zig_ar }}
+          ZIG_RANLIB: ${{ steps.zig.outputs.zig_ranlib }}
+        run: |
+          cmake -S . -B build-fw-scheduler -G Ninja \
+            -D CMAKE_TOOLCHAIN_FILE=cmake/toolchains/zig-arm-none-eabi.cmake \
+            -D EW_BUILD_HOST_TOOLS=OFF \
+            -D EW_BUILD_TESTS=OFF \
+            -D EW_BUILD_FIRMWARE=ON \
+            -D EW_USE_FREERTOS=ON \
+            -D EW_FREERTOS_START_SCHEDULER=ON \
+            -D FREERTOS_KERNEL_PATH="${RUNNER_TEMP}/FreeRTOS-Kernel"
+
+      - name: Build FreeRTOS scheduler firmware
+        run: cmake --build build-fw-scheduler

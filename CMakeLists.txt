@@ -9,6 +9,7 @@ option(EW_BUILD_HOST_TOOLS "Build host-side simulation tools" ON)
 option(EW_BUILD_TESTS "Build host-side tests" ON)
 option(EW_BUILD_FIRMWARE "Build target firmware ELF" OFF)
 option(EW_USE_FREERTOS "Link target firmware with external FreeRTOS-Kernel" OFF)
+option(EW_FREERTOS_START_SCHEDULER "Call vTaskStartScheduler from target firmware" OFF)
 
 if(EW_BUILD_TESTS)
     enable_testing()
@@ -107,6 +108,12 @@ if(EW_BUILD_FIRMWARE)
             PRIVATE
                 EW_FIRMWARE_USE_FREERTOS=1
         )
+        if(EW_FREERTOS_START_SCHEDULER)
+            target_compile_definitions(embedded_firmware
+                PRIVATE
+                    EW_FIRMWARE_START_FREERTOS_SCHEDULER=1
+            )
+        endif()
     endif()
 
     target_link_options(embedded_firmware

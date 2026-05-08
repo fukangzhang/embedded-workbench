@@ -21,5 +21,6 @@ typedef struct {
 
 bool freertos_rtos_port_init(rtos_port_t *port, freertos_rtos_port_context_t *context);
 bool freertos_rtos_port_send_response(freertos_rtos_port_context_t *context, const rtos_response_message_t *response);
+bool freertos_rtos_port_start_scheduler(freertos_rtos_port_context_t *context);
 
 #endif

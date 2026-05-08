@@ -69,6 +69,12 @@ int main(void)
         firmware_self_check = -1;
     }
 
+#if defined(EW_FIRMWARE_USE_FREERTOS) && defined(EW_FIRMWARE_START_FREERTOS_SCHEDULER)
+    if (freertos_ready && !freertos_rtos_port_start_scheduler(&firmware_rtos_context)) {
+        firmware_self_check = -2;
+    }
+#endif
+
     while (1) {
     }
 }
