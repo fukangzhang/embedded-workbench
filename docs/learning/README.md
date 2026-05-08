@@ -58,6 +58,7 @@
 - `2026-05-08-传感器数据模型.md`
 - `2026-05-08-告警状态机.md`
 - `2026-05-08-告警输出策略.md`
+- `2026-05-08-告警输出节拍逻辑.md`
 - `2026-05-08-主机仿真告警输出状态展示.md`
 - `2026-05-08-告警输出Sink接口.md`
 - `2026-05-08-告警输出数字输出适配器.md`
@@ -70,6 +71,8 @@
 - `app/src/alarm_state.c`
 - `app/include/embedded_workbench/alarm_output.h`
 - `app/src/alarm_output.c`
+- `app/include/embedded_workbench/alarm_output_timing.h`
+- `app/src/alarm_output_timing.c`
 - `app/include/embedded_workbench/alarm_output_sink.h`
 - `app/src/alarm_output_sink.c`
 - `app/include/embedded_workbench/alarm_output_digital_sink.h`
@@ -79,6 +82,7 @@
 - `tests/test_sensor_sample.c`
 - `tests/test_alarm_state.c`
 - `tests/test_alarm_output.c`
+- `tests/test_alarm_output_timing.c`
 - `tests/test_alarm_output_sink.c`
 - `tests/test_alarm_output_digital_sink.c`
 - `tests/test_response_format.c`
@@ -89,6 +93,7 @@
 - 为什么要校验传感器数据范围
 - warning/alarm/recovery 这些阈值怎么影响状态切换
 - 为什么“告警状态”和“硬件输出策略”要分成两个模块
+- `period_ms` 如何变成 indicator 的亮灭节拍
 - 主机仿真里看到的 output 字段来自哪个模块
 - `sink` 接口为什么能把业务逻辑和真实 GPIO 隔离开
 - 适配器如何把告警输出映射到 `board_profile` 的三类输出脚
@@ -253,6 +258,7 @@
 sensor_sample
   -> alarm_state
   -> alarm_output
+  -> alarm_output_timing
   -> alarm_output_sink
   -> alarm_output_digital_sink
   -> digital_output
