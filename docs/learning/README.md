@@ -161,6 +161,7 @@
 - `2026-05-08-目标板工具链预研.md`
 - `2026-05-08-STM32固件工程骨架.md`
 - `2026-05-08-固件告警输出链路自检.md`
+- `2026-05-08-固件STM32GPIO初始化链路自检.md`
 
 对应代码：
 
@@ -202,6 +203,7 @@
 - `stm32_rcc_gpio_clock` 为什么要先打开 GPIO 端口时钟
 - `stm32_board_gpio_init` 如何按 profile 串起 RCC 和 GPIO 配置
 - `firmware/src/main.c` 现在做了哪些自检
+- 固件入口如何用模拟寄存器验证 STM32 GPIO 初始化链路
 - 固件自检为什么能覆盖输出链路链接，但不能证明真实 GPIO 已经动作
 - startup 文件和 linker script 是什么角色
 - 为什么当前 Zig 路径是构建验证，不是最终板上工具链
