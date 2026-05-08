@@ -42,6 +42,7 @@ add_library(embedded_drivers
     drivers/src/stm32_gpio_config.c
     drivers/src/stm32_gpio_output.c
     drivers/src/stm32_rcc_gpio_clock.c
+    drivers/src/stm32f401re_gpio_bindings.c
 )
 
 target_include_directories(embedded_drivers
@@ -292,6 +293,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME stm32_board_gpio_init COMMAND test_stm32_board_gpio_init)
+
+    add_executable(test_stm32f401re_gpio_bindings
+        tests/test_stm32f401re_gpio_bindings.c
+    )
+
+    target_link_libraries(test_stm32f401re_gpio_bindings
+        PRIVATE
+            embedded_drivers
+    )
+
+    add_test(NAME stm32f401re_gpio_bindings COMMAND test_stm32f401re_gpio_bindings)
 
     add_executable(test_board_digital_output
         tests/test_board_digital_output.c
