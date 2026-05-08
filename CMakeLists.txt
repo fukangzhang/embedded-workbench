@@ -52,6 +52,7 @@ target_link_libraries(test_app_info
 )
 
 add_test(NAME app_info COMMAND test_app_info)
+add_test(NAME host_sim_smoke COMMAND host_sim)
 
 add_executable(test_sensor_sample
     tests/test_sensor_sample.c
