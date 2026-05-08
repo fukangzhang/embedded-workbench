@@ -5,6 +5,7 @@
 #include "embedded_workbench/app_info.h"
 #include "embedded_workbench/command_handler.h"
 #include "embedded_workbench/command_parser.h"
+#include "embedded_workbench/response_format.h"
 #include "embedded_workbench/sensor_sample.h"
 
 static void print_sample(const sensor_sample_t *sample)
@@ -15,20 +16,6 @@ static void print_sample(const sensor_sample_t *sample)
         sample->humidity_rh_x10 / 10.0,
         (unsigned long)sample->light_lux,
         (unsigned int)sample->smoke_ppm);
-}
-
-static void print_config(const alarm_config_t *config)
-{
-    printf(
-        "config temp_warn=%d temp_alarm=%d hum_warn=%u hum_alarm=%u light_warn_low=%lu light_alarm_low=%lu smoke_warn=%u smoke_alarm=%u\n",
-        (int)config->temperature_warning_high_c_x10,
-        (int)config->temperature_alarm_high_c_x10,
-        (unsigned int)config->humidity_warning_high_rh_x10,
-        (unsigned int)config->humidity_alarm_high_rh_x10,
-        (unsigned long)config->light_warning_low_lux,
-        (unsigned long)config->light_alarm_low_lux,
-        (unsigned int)config->smoke_warning_ppm,
-        (unsigned int)config->smoke_alarm_ppm);
 }
 
 static void print_status(alarm_state_t state, const sensor_sample_t *sample)
@@ -67,27 +54,45 @@ static void handle_script_command(
 {
     command_t command;
     command_handler_result_t result;
+    char response[256];
 
     if (!command_parse(line, &command)) {
-        printf("response error=invalid-command\n");
+        result.result = COMMAND_RESULT_INVALID_COMMAND;
+        result.config_changed = false;
+        result.status_requested = false;
+        result.config_requested = false;
+        result.alarm_clear_requested = false;
+        if (response_format_result(response, sizeof(response), &result)) {
+            printf("%s", response);
+        }
         return;
     }
 
     result = command_handler_handle(&command, config);
-    printf("response result=%s\n", command_result_name(result.result));
+    if (response_format_result(response, sizeof(response), &result)) {
+        printf("%s", response);
+    }
 
     if (result.config_changed) {
         *state = alarm_state_update(*state, config, sample);
-        print_config(config);
-        printf("state=%s\n", alarm_state_name(*state));
+        if (response_format_config(response, sizeof(response), config)) {
+            printf("%s", response);
+        }
+        if (response_format_status(response, sizeof(response), *state, sample)) {
+            printf("%s", response);
+        }
     }
 
     if (result.status_requested) {
-        print_status(*state, sample);
+        if (response_format_status(response, sizeof(response), *state, sample)) {
+            printf("%s", response);
+        }
     }
 
     if (result.config_requested) {
-        print_config(config);
+        if (response_format_config(response, sizeof(response), config)) {
+            printf("%s", response);
+        }
     }
 
     if (result.alarm_clear_requested) {
