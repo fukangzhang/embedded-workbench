@@ -32,7 +32,9 @@ int main(void)
         expect_string(profile->name, "NUCLEO-F401RE") != 0 ||
         expect_string(profile->mcu, "STM32F401RE") != 0 ||
         expect_string(profile->console_uart, "USART2") != 0 ||
-        expect_string(profile->sensor_bus, "I2C1") != 0) {
+        expect_string(profile->sensor_bus, "I2C1") != 0 ||
+        expect_string(profile->alarm_actuator.port, "PB") != 0 ||
+        profile->alarm_actuator.pin != 7u) {
         return 2;
     }
 

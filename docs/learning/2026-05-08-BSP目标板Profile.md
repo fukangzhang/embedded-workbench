@@ -28,6 +28,24 @@ BSP 是 Board Support Package，板级支持包。
 
 这相当于目标板接入前的硬件地图。
 
+## 告警输出引脚现在有哪些？
+当前 profile 记录了三类告警输出：
+
+- `alarm_led`：告警指示灯，默认使用 `PA5`
+- `alarm_buzzer`：外接蜂鸣器占位，默认使用 `PB6`
+- `alarm_actuator`：外接执行器使能占位，默认使用 `PB7`
+
+这三个字段正好对应应用层输出策略：
+
+```text
+alarm_output_command_t
+  -> indicator
+  -> buzzer_enabled
+  -> actuator_enabled
+```
+
+注意：这里仍然只是板级资源说明，不等于已经写了 GPIO 初始化，也不等于真实硬件已经接好。真正控制引脚会在后续 BSP/driver 任务中完成。
+
 ## 为什么推荐 NUCLEO-F401RE？
 当前默认 profile 选择 `NUCLEO-F401RE`。原因是：
 
