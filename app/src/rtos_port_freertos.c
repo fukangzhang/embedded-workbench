@@ -1,5 +1,6 @@
 #include "embedded_workbench/rtos_port_freertos.h"
 
+#include "embedded_workbench/alarm_output.h"
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/rtos_task_model.h"
 
@@ -104,12 +105,16 @@ static void alarm_output_task(void *parameter)
 {
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
     freertos_alarm_event_t event;
+    alarm_output_command_t command;
 
     for (;;) {
         if (context != 0 &&
             context->alarm_event_queue != 0 &&
             xQueueReceive(context->alarm_event_queue, &event, portMAX_DELAY) == pdPASS) {
-            (void)event;
+            if (context->alarm_output_sink != 0 &&
+                alarm_output_command_for_state(event.state, &command)) {
+                (void)alarm_output_sink_apply(context->alarm_output_sink, &command);
+            }
         }
     }
 }

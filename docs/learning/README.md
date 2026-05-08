@@ -59,6 +59,7 @@
 - `2026-05-08-告警状态机.md`
 - `2026-05-08-告警输出策略.md`
 - `2026-05-08-主机仿真告警输出状态展示.md`
+- `2026-05-08-告警输出Sink接口.md`
 
 对应代码：
 
@@ -68,11 +69,14 @@
 - `app/src/alarm_state.c`
 - `app/include/embedded_workbench/alarm_output.h`
 - `app/src/alarm_output.c`
+- `app/include/embedded_workbench/alarm_output_sink.h`
+- `app/src/alarm_output_sink.c`
 - `app/src/response_format.c`
 - `tools/host_sim/main.c`
 - `tests/test_sensor_sample.c`
 - `tests/test_alarm_state.c`
 - `tests/test_alarm_output.c`
+- `tests/test_alarm_output_sink.c`
 - `tests/test_response_format.c`
 
 看完要能解释：
@@ -82,6 +86,7 @@
 - warning/alarm/recovery 这些阈值怎么影响状态切换
 - 为什么“告警状态”和“硬件输出策略”要分成两个模块
 - 主机仿真里看到的 output 字段来自哪个模块
+- `sink` 接口为什么能把业务逻辑和真实 GPIO 隔离开
 
 ### 2. 命令、配置和响应
 
@@ -238,6 +243,7 @@ command_parser
 rtos_task_model
   -> rtos_port
   -> rtos_port_freertos
+  -> alarm_output_sink
   -> firmware/main.c
 ```
 
