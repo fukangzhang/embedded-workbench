@@ -10,6 +10,7 @@ option(EW_BUILD_TESTS "Build host-side tests" ON)
 option(EW_BUILD_FIRMWARE "Build target firmware ELF" OFF)
 option(EW_USE_FREERTOS "Link target firmware with external FreeRTOS-Kernel" OFF)
 option(EW_FREERTOS_START_SCHEDULER "Call vTaskStartScheduler from target firmware" OFF)
+option(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT "Use STM32F401RE memory-mapped GPIO init path in firmware" OFF)
 
 if(EW_BUILD_TESTS)
     enable_testing()
@@ -130,6 +131,13 @@ if(EW_BUILD_FIRMWARE)
                     EW_FIRMWARE_START_FREERTOS_SCHEDULER=1
             )
         endif()
+    endif()
+
+    if(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT)
+        target_compile_definitions(embedded_firmware
+            PRIVATE
+                EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT=1
+        )
     endif()
 
     target_link_options(embedded_firmware
