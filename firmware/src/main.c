@@ -11,6 +11,10 @@
 #include "embedded_workbench/sensor_sample.h"
 #include "embedded_workbench/stm32_board_gpio_init.h"
 
+#if defined(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT)
+#include "embedded_workbench/stm32f401re_gpio_bindings.h"
+#endif
+
 #if defined(EW_FIRMWARE_USE_FREERTOS)
 #include "embedded_workbench/rtos_port_freertos.h"
 #endif
@@ -108,6 +112,29 @@ static bool firmware_stm32_gpio_init_self_check(void)
            gpio_pin_is_output(&firmware_gpiob_registers, profile->alarm_actuator.pin);
 }
 
+#if defined(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT)
+static bool firmware_stm32f401re_real_gpio_init(void)
+{
+    const board_profile_t *profile = board_profile_default();
+    stm32_rcc_gpio_clock_context_t clock_context;
+    stm32_gpio_config_context_t gpio_context;
+    size_t clock_port_count = 0u;
+    size_t gpio_port_count = 0u;
+    const stm32_rcc_gpio_clock_port_t *clock_ports = stm32f401re_gpio_clock_ports(&clock_port_count);
+    const stm32_gpio_config_port_t *gpio_ports = stm32f401re_gpio_config_ports(&gpio_port_count);
+
+    /* 这个路径会解引用 STM32F401RE 的真实内存映射寄存器地址。
+     * 它只能在目标板固件中通过显式编译开关启用，主机测试和默认固件构建不会执行。 */
+    return stm32_rcc_gpio_clock_init(
+               &clock_context,
+               stm32f401re_rcc_ahb1enr(),
+               clock_ports,
+               clock_port_count) &&
+           stm32_gpio_config_init(&gpio_context, gpio_ports, gpio_port_count) &&
+           stm32_board_gpio_init_alarm_outputs(profile, &clock_context, &gpio_context, 0);
+}
+#endif
+
 #if defined(EW_FIRMWARE_USE_FREERTOS)
 static freertos_rtos_port_context_t firmware_rtos_context = {0};
 static rtos_port_t firmware_rtos_port = {0};
@@ -142,6 +169,7 @@ int main(void)
     command_handler_result_t result;
     char response[160];
     bool freertos_ready = true;
+    bool real_gpio_ready = true;
 
     command_init(&command);
     command.type = COMMAND_TYPE_GET_STATUS;
@@ -154,13 +182,18 @@ int main(void)
     freertos_ready = firmware_freertos_queue_self_check(&sample, &command);
 #endif
 
+#if defined(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT)
+    real_gpio_ready = firmware_stm32f401re_real_gpio_init();
+#endif
+
     if (board_profile_is_valid(board_profile_default()) &&
         rtos_task_model_is_valid() &&
         result.status_requested &&
         response_format_status(response, sizeof(response), firmware_last_state, &sample) &&
         firmware_alarm_output_self_check() &&
         firmware_stm32_gpio_init_self_check() &&
-        freertos_ready) {
+        freertos_ready &&
+        real_gpio_ready) {
         firmware_self_check = 1;
     } else {
         firmware_self_check = -1;

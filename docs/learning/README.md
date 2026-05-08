@@ -159,6 +159,7 @@
 - `2026-05-08-STM32RCCGPIO时钟使能.md`
 - `2026-05-08-STM32板级GPIO输出初始化.md`
 - `2026-05-08-STM32F401REGPIO地址绑定.md`
+- `2026-05-08-固件真实STM32GPIO初始化开关.md`
 - `2026-05-08-目标板工具链预研.md`
 - `2026-05-08-STM32固件工程骨架.md`
 - `2026-05-08-固件告警输出链路自检.md`
@@ -182,6 +183,8 @@
 - `drivers/src/stm32_board_gpio_init.c`
 - `drivers/include/embedded_workbench/stm32f401re_gpio_bindings.h`
 - `drivers/src/stm32f401re_gpio_bindings.c`
+- `CMakeLists.txt`
+- `.github/workflows/ci.yml`
 - `firmware/src/main.c`
 - `firmware/startup/startup_stm32f401re.c`
 - `firmware/linker/stm32f401re.ld`
@@ -207,6 +210,7 @@
 - `stm32_rcc_gpio_clock` 为什么要先打开 GPIO 端口时钟
 - `stm32_board_gpio_init` 如何按 profile 串起 RCC 和 GPIO 配置
 - `stm32f401re_gpio_bindings` 为什么只提供地址绑定，不直接访问硬件
+- `EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT` 为什么默认关闭，以及打开后证明了什么
 - `firmware/src/main.c` 现在做了哪些自检
 - 固件入口如何用模拟寄存器验证 STM32 GPIO 初始化链路
 - 固件自检为什么能覆盖输出链路链接，但不能证明真实 GPIO 已经动作
