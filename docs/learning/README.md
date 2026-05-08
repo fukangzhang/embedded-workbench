@@ -60,6 +60,7 @@
 - `2026-05-08-告警输出策略.md`
 - `2026-05-08-主机仿真告警输出状态展示.md`
 - `2026-05-08-告警输出Sink接口.md`
+- `2026-05-08-告警输出数字输出适配器.md`
 
 对应代码：
 
@@ -71,12 +72,15 @@
 - `app/src/alarm_output.c`
 - `app/include/embedded_workbench/alarm_output_sink.h`
 - `app/src/alarm_output_sink.c`
+- `app/include/embedded_workbench/alarm_output_digital_sink.h`
+- `app/src/alarm_output_digital_sink.c`
 - `app/src/response_format.c`
 - `tools/host_sim/main.c`
 - `tests/test_sensor_sample.c`
 - `tests/test_alarm_state.c`
 - `tests/test_alarm_output.c`
 - `tests/test_alarm_output_sink.c`
+- `tests/test_alarm_output_digital_sink.c`
 - `tests/test_response_format.c`
 
 看完要能解释：
@@ -87,6 +91,7 @@
 - 为什么“告警状态”和“硬件输出策略”要分成两个模块
 - 主机仿真里看到的 output 字段来自哪个模块
 - `sink` 接口为什么能把业务逻辑和真实 GPIO 隔离开
+- 适配器如何把告警输出映射到 `board_profile` 的三类输出脚
 
 ### 2. 命令、配置和响应
 
@@ -241,6 +246,9 @@
 sensor_sample
   -> alarm_state
   -> alarm_output
+  -> alarm_output_sink
+  -> alarm_output_digital_sink
+  -> digital_output
 
 command_parser
   -> command_handler
