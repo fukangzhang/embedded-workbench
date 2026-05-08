@@ -20,6 +20,7 @@ target_include_directories(embedded_drivers
 add_library(embedded_app
     app/src/app_info.c
     app/src/alarm_state.c
+    app/src/command_handler.c
 )
 
 target_include_directories(embedded_app
@@ -84,3 +85,14 @@ target_link_libraries(test_command_parser
 )
 
 add_test(NAME command_parser COMMAND test_command_parser)
+
+add_executable(test_command_handler
+    tests/test_command_handler.c
+)
+
+target_link_libraries(test_command_handler
+    PRIVATE
+        embedded_app
+)
+
+add_test(NAME command_handler COMMAND test_command_handler)
