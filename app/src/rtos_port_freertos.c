@@ -223,3 +223,14 @@ bool freertos_rtos_port_send_response(freertos_rtos_port_context_t *context, con
 
     return xQueueSend(context->response_queue, response, (TickType_t)0) == pdPASS;
 }
+
+bool freertos_rtos_port_start_scheduler(freertos_rtos_port_context_t *context)
+{
+    if (!tasks_are_created(context)) {
+        return false;
+    }
+
+    vTaskStartScheduler();
+
+    return false;
+}
