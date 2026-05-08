@@ -7,6 +7,15 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 enable_testing()
 
+add_library(embedded_bsp
+    bsp/src/board_profile.c
+)
+
+target_include_directories(embedded_bsp
+    PUBLIC
+        bsp/include
+)
+
 add_library(embedded_drivers
     drivers/src/command_parser.c
     drivers/src/sensor_sample.c
@@ -121,3 +130,14 @@ target_link_libraries(test_rtos_task_model
 )
 
 add_test(NAME rtos_task_model COMMAND test_rtos_task_model)
+
+add_executable(test_board_profile
+    tests/test_board_profile.c
+)
+
+target_link_libraries(test_board_profile
+    PRIVATE
+        embedded_bsp
+)
+
+add_test(NAME board_profile COMMAND test_board_profile)
