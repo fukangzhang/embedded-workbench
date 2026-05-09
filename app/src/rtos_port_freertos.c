@@ -4,7 +4,7 @@
 #include "embedded_workbench/alarm_output_timing.h"
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/rtos_task_model.h"
-#include "embedded_workbench/sensor_source.h"
+#include "embedded_workbench/sensor_acquisition.h"
 
 /* rtos_port_freertos 把项目自己的 rtos_port_t 接到 FreeRTOS。
  * 这个文件是“真实 RTOS 后端”，负责创建队列、创建任务、在任务间转发消息。 */
@@ -65,17 +65,37 @@ static void delay_for_descriptor(rtos_task_id_t id)
     vTaskDelay((TickType_t)period_ms);
 }
 
+static bool freertos_submit_sensor_sample(void *context, const sensor_sample_t *sample)
+{
+    freertos_rtos_port_context_t *freertos_context = (freertos_rtos_port_context_t *)context;
+
+    if (freertos_context == 0 ||
+        freertos_context->sensor_sample_queue == 0 ||
+        sample == 0) {
+        return false;
+    }
+
+    return xQueueSend(freertos_context->sensor_sample_queue, sample, (TickType_t)0) == pdPASS;
+}
+
 static void sensor_acquire_task(void *parameter)
 {
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
-    sensor_sample_t sample;
+    sensor_acquisition_t acquisition;
+    bool acquisition_ready = false;
+
+    if (context != 0) {
+        acquisition_ready = sensor_acquisition_init(
+            &acquisition,
+            context->sensor_source,
+            freertos_submit_sensor_sample,
+            context);
+    }
 
     for (;;) {
         /* source 是可选的：早期固件可以只验证任务创建；配置 source 后才真正产生 sample。 */
-        if (context != 0 &&
-            context->sensor_sample_queue != 0 &&
-            sensor_source_read(context->sensor_source, &sample)) {
-            (void)xQueueSend(context->sensor_sample_queue, &sample, (TickType_t)0);
+        if (acquisition_ready) {
+            (void)sensor_acquisition_poll(&acquisition);
         }
         delay_for_descriptor(RTOS_TASK_SENSOR_ACQUIRE);
     }
