@@ -12,6 +12,7 @@ option(EW_USE_FREERTOS "Link target firmware with external FreeRTOS-Kernel" OFF)
 option(EW_FREERTOS_START_SCHEDULER "Call vTaskStartScheduler from target firmware" OFF)
 option(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT "Use STM32F401RE memory-mapped GPIO init path in firmware" OFF)
 option(EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP "Use STM32F401RE memory-mapped USART2 command polling loop in firmware" OFF)
+set(EW_FIRMWARE_OBJCOPY "" CACHE FILEPATH "Optional objcopy executable for firmware .bin/.hex generation")
 
 if(EW_BUILD_TESTS)
     enable_testing()
@@ -168,6 +169,35 @@ if(EW_BUILD_FIRMWARE)
         OUTPUT_NAME embedded_firmware
         SUFFIX ".elf"
     )
+
+    set(EW_FIRMWARE_IMAGE_BASE "$<TARGET_FILE_DIR:embedded_firmware>/$<TARGET_FILE_BASE_NAME:embedded_firmware>")
+    if(EW_FIRMWARE_OBJCOPY)
+        set(EW_FIRMWARE_OBJCOPY_COMMAND ${EW_FIRMWARE_OBJCOPY})
+        set(EW_FIRMWARE_HEX_FORMAT ihex)
+    elseif(DEFINED ZIG_EXE AND ZIG_EXE)
+        set(EW_FIRMWARE_OBJCOPY_COMMAND ${ZIG_EXE} objcopy)
+        set(EW_FIRMWARE_HEX_FORMAT hex)
+    elseif(CMAKE_OBJCOPY)
+        set(EW_FIRMWARE_OBJCOPY_COMMAND ${CMAKE_OBJCOPY})
+        set(EW_FIRMWARE_HEX_FORMAT ihex)
+    endif()
+
+    if(EW_FIRMWARE_OBJCOPY_COMMAND)
+        add_custom_command(
+            TARGET embedded_firmware
+            POST_BUILD
+            COMMAND ${EW_FIRMWARE_OBJCOPY_COMMAND}
+                -O binary
+                $<TARGET_FILE:embedded_firmware>
+                ${EW_FIRMWARE_IMAGE_BASE}.bin
+            COMMAND ${EW_FIRMWARE_OBJCOPY_COMMAND}
+                -O ${EW_FIRMWARE_HEX_FORMAT}
+                $<TARGET_FILE:embedded_firmware>
+                ${EW_FIRMWARE_IMAGE_BASE}.hex
+            COMMENT "Generating firmware .bin and .hex images"
+            VERBATIM
+        )
+    endif()
 endif()
 
 if(EW_BUILD_TESTS)
