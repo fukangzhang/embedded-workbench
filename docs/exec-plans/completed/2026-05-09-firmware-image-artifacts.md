@@ -30,3 +30,4 @@ Generate flashable `.bin` and `.hex` images from `embedded_firmware.elf` so boar
 - 2026-05-09: Started after real USART2 command loop switch merged to `main` and main CI passed.
 - 2026-05-09: Added firmware `.bin/.hex` post-build generation and docs; Zig objcopy uses `-O hex`.
 - 2026-05-09: Validation passed: `git diff --check`, host build, 30/30 CTest, default firmware build, real GPIO firmware build, real USART2 command loop firmware build, FreeRTOS firmware build, scheduler firmware build, and ELF/BIN/HEX artifact existence checks.
+- 2026-05-09: PR CI exposed that Linux selected host `/usr/bin/objcopy` before `zig objcopy`; updated tool selection to prefer Zig when the Zig toolchain is active.

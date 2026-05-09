@@ -45,6 +45,16 @@ Zig 自带的 objcopy 使用：
 
 项目当前 CI 和本地固件构建主要使用 Zig 路径，所以 CMake 里根据可用工具选择合适格式名。
 
+这里还有一个容易踩的点：Linux CI 上可能同时有 Zig 和系统自带的 `/usr/bin/objcopy`。如果先选系统 `objcopy`，它可能不认识 Zig 交叉编译出来的 ARM ELF，构建就会在生成 `.bin` 时失败。因此项目现在的选择顺序是：
+
+```text
+EW_FIRMWARE_OBJCOPY 显式指定
+  -> zig objcopy
+  -> CMAKE_OBJCOPY
+```
+
+简单理解：你手动指定的工具最优先；没有手动指定时，既然固件是 Zig 交叉编译出来的，就先用 Zig 自己带的 objcopy。
+
 ## 怎么确认产物生成了？
 
 构建固件后看对应 build 目录：
