@@ -44,6 +44,7 @@ add_library(embedded_drivers
     drivers/src/stm32_gpio_config.c
     drivers/src/stm32_gpio_output.c
     drivers/src/stm32_rcc_gpio_clock.c
+    drivers/src/stm32_rcc_usart_clock.c
     drivers/src/stm32_usart.c
     drivers/src/stm32f401re_gpio_bindings.c
 )
@@ -312,6 +313,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME stm32_rcc_gpio_clock COMMAND test_stm32_rcc_gpio_clock)
+
+    add_executable(test_stm32_rcc_usart_clock
+        tests/test_stm32_rcc_usart_clock.c
+    )
+
+    target_link_libraries(test_stm32_rcc_usart_clock
+        PRIVATE
+            embedded_drivers
+    )
+
+    add_test(NAME stm32_rcc_usart_clock COMMAND test_stm32_rcc_usart_clock)
 
     add_executable(test_stm32_usart
         tests/test_stm32_usart.c
