@@ -200,6 +200,13 @@ STATUS state=warning
 
 如果本次验证目标不同，可以用 `-Expect` 传入自定义期望片段。
 
+如果已经保存过 transcript，也可以离线复查，不重新打开串口：
+
+```powershell
+.\scripts\verify_freertos_usart2_vcp.ps1 `
+  -ReplayLogPath hardware\logs\freertos-usart2-vcp-2026-05-09.txt
+```
+
 如果 `openocd` 不在 PATH 中，可以显式传入可执行文件路径：
 
 ```powershell

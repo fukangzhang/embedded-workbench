@@ -395,7 +395,7 @@
 - `communication_task` 如何通过可选 writer hook 把 `response_queue` 文本写回 USART2
 - `SAMPLE` 命令如何从通信任务转发到 `sensor_sample_queue`，让环境处理任务也看到手工注入样本
 - 为什么板上验证要使用 scheduler + reader + writer 同时开启的专用固件构建入口
-- VCP 验证脚本如何固定命令序列、检查关键响应片段，并把串口响应变成可保存的验证记录
+- VCP 验证脚本如何固定命令序列、检查关键响应片段，并离线回放已保存的串口验证记录
 - `config_update_queue` 如何把 `SET` 命令产生的新配置快照同步给环境处理任务
 - `firmware/src/main.c` 如何在 scheduler 启动前准备模拟 `sensor_source` 和 `alarm_output_sink`
 - `xTaskCreate` 创建任务，但不等于调度器已经启动
