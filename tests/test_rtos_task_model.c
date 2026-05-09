@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/command_parser.h"
 #include "embedded_workbench/rtos_port.h"
 #include "embedded_workbench/rtos_task_model.h"
@@ -55,7 +56,7 @@ int main(void)
         return 4;
     }
 
-    if (expect_size(rtos_task_model_queue_count(), 4u) != 0) {
+    if (expect_size(rtos_task_model_queue_count(), 5u) != 0) {
         return 5;
     }
 
@@ -86,6 +87,13 @@ int main(void)
     queue = rtos_task_model_queue_at(99u);
     if (queue != 0) {
         return 9;
+    }
+
+    queue = rtos_task_model_find_queue(RTOS_QUEUE_CONFIG_UPDATE);
+    if (queue == 0 ||
+        expect_string(queue->name, "config_update_queue") != 0 ||
+        expect_size(queue->item_size, sizeof(alarm_config_t)) != 0) {
+        return 10;
     }
 
     /* 越界访问返回 0，调用者可以安全判断“没找到”。 */

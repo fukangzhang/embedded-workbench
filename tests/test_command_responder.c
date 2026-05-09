@@ -65,6 +65,7 @@ static int test_set_updates_config_and_status(void)
     alarm_state_t state = ALARM_STATE_NORMAL;
     sensor_sample_t sample = sensor_sample_make(360, 500u, 300u, 20u);
     command_responder_t responder = make_responder(&config, &state, &sample);
+    command_responder_status_t status;
     command_t command;
     char response[512];
 
@@ -73,7 +74,9 @@ static int test_set_updates_config_and_status(void)
     command.threshold = COMMAND_THRESHOLD_TEMP_WARNING_HIGH;
     command.value = 360;
 
-    if (expect_true(command_responder_handle_command(&responder, &command, response, sizeof(response))) != 0 ||
+    if (expect_true(command_responder_handle_command_with_status(&responder, &command, response, sizeof(response), &status)) != 0 ||
+        expect_true(status.config_changed) != 0 ||
+        expect_false(status.sample_changed) != 0 ||
         expect_int(config.temperature_warning_high_c_x10, 360) != 0 ||
         expect_int(state, ALARM_STATE_WARNING) != 0 ||
         expect_string(
@@ -93,6 +96,7 @@ static int test_sample_updates_sample_and_status(void)
     alarm_state_t state = ALARM_STATE_NORMAL;
     sensor_sample_t sample = sensor_sample_make(250, 500u, 300u, 20u);
     command_responder_t responder = make_responder(&config, &state, &sample);
+    command_responder_status_t status;
     command_t command;
     char response[512];
 
@@ -103,7 +107,9 @@ static int test_sample_updates_sample_and_status(void)
     command.sample_light_lux = 250;
     command.sample_smoke_ppm = 20;
 
-    if (expect_true(command_responder_handle_command(&responder, &command, response, sizeof(response))) != 0 ||
+    if (expect_true(command_responder_handle_command_with_status(&responder, &command, response, sizeof(response), &status)) != 0 ||
+        expect_false(status.config_changed) != 0 ||
+        expect_true(status.sample_changed) != 0 ||
         expect_int(sample.temperature_c_x10, 360) != 0 ||
         expect_int(state, ALARM_STATE_WARNING) != 0 ||
         expect_string(
@@ -153,13 +159,16 @@ static int test_invalid_command_and_value_response(void)
     alarm_state_t state = ALARM_STATE_NORMAL;
     sensor_sample_t sample = sensor_sample_make(250, 500u, 300u, 20u);
     command_responder_t responder = make_responder(&config, &state, &sample);
+    command_responder_status_t status;
     command_t command;
     char response[128];
 
     command_init(&command);
     command.type = COMMAND_TYPE_INVALID;
 
-    if (expect_true(command_responder_handle_command(&responder, &command, response, sizeof(response))) != 0 ||
+    if (expect_true(command_responder_handle_command_with_status(&responder, &command, response, sizeof(response), &status)) != 0 ||
+        expect_false(status.config_changed) != 0 ||
+        expect_false(status.sample_changed) != 0 ||
         expect_string(response, "ERR result=invalid-command\n") != 0) {
         return 1;
     }
@@ -171,7 +180,12 @@ static int test_invalid_command_and_value_response(void)
     command.sample_light_lux = 300;
     command.sample_smoke_ppm = 20;
 
-    if (expect_true(command_responder_handle_command(&responder, &command, response, sizeof(response))) != 0 ||
+    status.config_changed = true;
+    status.sample_changed = true;
+
+    if (expect_true(command_responder_handle_command_with_status(&responder, &command, response, sizeof(response), &status)) != 0 ||
+        expect_false(status.config_changed) != 0 ||
+        expect_false(status.sample_changed) != 0 ||
         expect_string(response, "ERR result=invalid-value\n") != 0 ||
         expect_int(sample.temperature_c_x10, 250) != 0 ||
         expect_int(state, ALARM_STATE_NORMAL) != 0) {

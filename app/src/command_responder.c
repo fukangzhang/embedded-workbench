@@ -116,6 +116,14 @@ static bool responder_is_ready(const command_responder_t *responder)
            sensor_sample_is_valid(responder->sample);
 }
 
+static void responder_status_clear(command_responder_status_t *status)
+{
+    if (status != 0) {
+        status->config_changed = false;
+        status->sample_changed = false;
+    }
+}
+
 bool command_responder_init(
     command_responder_t *responder,
     alarm_config_t *config,
@@ -142,9 +150,21 @@ bool command_responder_handle_command(
     char *response,
     size_t response_size)
 {
+    return command_responder_handle_command_with_status(responder, command, response, response_size, 0);
+}
+
+bool command_responder_handle_command_with_status(
+    command_responder_t *responder,
+    const command_t *command,
+    char *response,
+    size_t response_size,
+    command_responder_status_t *status)
+{
     command_handler_result_t result;
     responder_writer_t writer;
     status_format_context_t status_context;
+
+    responder_status_clear(status);
 
     if (!responder_is_ready(responder) || response == 0 || response_size == 0u) {
         return false;
@@ -153,6 +173,11 @@ bool command_responder_handle_command(
     writer_init(&writer, response, response_size);
 
     result = command_handler_handle(command, responder->config, responder->sample);
+    if (status != 0) {
+        status->config_changed = result.config_changed;
+        status->sample_changed = result.sample_changed;
+    }
+
     if (!writer_append_formatted(&writer, format_result_adapter, &result)) {
         return false;
     }
