@@ -347,6 +347,7 @@
 - `2026-05-09-FreeRTOS命令IngressHook.md`
 - `2026-05-09-FreeRTOS真实USART2命令Reader.md`
 - `2026-05-09-FreeRTOS真实USART2响应Writer.md`
+- `2026-05-09-FreeRTOS真实USART2IO板上验证入口.md`
 - `2026-05-09-FreeRTOS配置更新队列.md`
 - `2026-05-08-FreeRTOS调度器显式启动入口.md`
 - `2026-05-09-FreeRTOS运行期Context接线.md`
@@ -373,6 +374,7 @@
 - `app/include/embedded_workbench/serial_command_ingress_pump.h`
 - `app/src/serial_command_ingress_pump.c`
 - `firmware/src/main.c`
+- `scripts/build_freertos_usart2_io_firmware.ps1`
 - `tests/test_command_responder.c`
 - `tests/test_rtos_task_model.c`
 
@@ -388,6 +390,7 @@
 - `communication_task` 如何通过可选 reader hook 把串口字节入口接到 `command_queue`
 - FreeRTOS 固件路径如何通过默认关闭开关把真实 USART2 reader 绑定到 command ingress hook
 - `communication_task` 如何通过可选 writer hook 把 `response_queue` 文本写回 USART2
+- 为什么板上验证要使用 scheduler + reader + writer 同时开启的专用固件构建入口
 - `config_update_queue` 如何把 `SET` 命令产生的新配置快照同步给环境处理任务
 - `firmware/src/main.c` 如何在 scheduler 启动前准备模拟 `sensor_source` 和 `alarm_output_sink`
 - `xTaskCreate` 创建任务，但不等于调度器已经启动

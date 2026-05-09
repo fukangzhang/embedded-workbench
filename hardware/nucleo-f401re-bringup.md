@@ -93,6 +93,26 @@ build-fw-real-usart2-command/embedded_firmware.bin
 build-fw-real-usart2-command/embedded_firmware.hex
 ```
 
+构建开启 FreeRTOS scheduler、真实 USART2 command reader 和真实 USART2 response writer 的固件：
+
+```powershell
+.\scripts\build_freertos_usart2_io_firmware.ps1
+```
+
+第一次只想确认脚本会执行哪些命令，可以先 dry-run：
+
+```powershell
+.\scripts\build_freertos_usart2_io_firmware.ps1 -DryRun
+```
+
+FreeRTOS 真实 USART2 I/O 板上验证应使用：
+
+```text
+build-fw-scheduler-real-usart2-io/embedded_firmware.elf
+build-fw-scheduler-real-usart2-io/embedded_firmware.bin
+build-fw-scheduler-real-usart2-io/embedded_firmware.hex
+```
+
 `ELF` 更适合调试器，`BIN/HEX` 更适合烧录工具。具体用哪个取决于后续选择 STM32CubeProgrammer、OpenOCD 还是其他 ST-LINK 工具。
 
 ## OpenOCD 烧录入口
@@ -119,6 +139,12 @@ build-fw-real-usart2-command/embedded_firmware.elf
 
 ```powershell
 .\scripts\flash_nucleo_f401re_openocd.ps1 -ImagePath build-fw-real-usart2-command\embedded_firmware.bin
+```
+
+如果要烧录 FreeRTOS 真实 USART2 I/O 固件，显式指定新构建目录：
+
+```powershell
+.\scripts\flash_nucleo_f401re_openocd.ps1 -ImagePath build-fw-scheduler-real-usart2-io\embedded_firmware.elf
 ```
 
 如果 `openocd` 不在 PATH 中，可以显式传入可执行文件路径：
@@ -185,7 +211,7 @@ stm32f401re_gpio_bindings
 
 7. 串口没有响应
 
-   先确认使用的是 `build-fw-real-usart2-command/embedded_firmware.elf`，串口参数为 `9600 8N1`，并且终端发送了 `STATUS?` 加换行。再检查 PA2/PA3 是否走 ST-LINK VCP，对应 `USART2_TX/USART2_RX`。
+   裸机命令 loop 先确认使用的是 `build-fw-real-usart2-command/embedded_firmware.elf`。FreeRTOS 任务闭环先确认使用的是 `build-fw-scheduler-real-usart2-io/embedded_firmware.elf`。串口参数为 `9600 8N1`，并且终端发送了 `STATUS?` 加换行。再检查 PA2/PA3 是否走 ST-LINK VCP，对应 `USART2_TX/USART2_RX`。
 
 8. 想在没有传感器时触发 warning
 
@@ -193,13 +219,12 @@ stm32f401re_gpio_bindings
 
 ## 本次还不验证什么
 
-这份清单不证明：
+这份清单本身不证明：
 
-- FreeRTOS 任务已经在板上稳定调度。
 - 真实传感器已经接入。
 - 蜂鸣器和执行器电路已经可用。
 
-这些应该拆成后续独立 bring-up 任务，每个任务都留下观察结果和失败记录。
+FreeRTOS 任务调度和 USART2 命令 I/O 现在已经有待烧录固件入口，但还需要真实板卡观察后，才能把结论写入下面的验证记录。
 
 ## 板上验证记录
 
