@@ -42,6 +42,7 @@ add_library(embedded_drivers
     drivers/src/board_digital_output.c
     drivers/src/command_parser.c
     drivers/src/digital_output.c
+    drivers/src/filtered_sensor_source.c
     drivers/src/sensor_sample.c
     drivers/src/sensor_sample_filter.c
     drivers/src/sequence_sensor_source.c
@@ -268,6 +269,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME sensor_sample_filter COMMAND test_sensor_sample_filter)
+
+    add_executable(test_filtered_sensor_source
+        tests/test_filtered_sensor_source.c
+    )
+
+    target_link_libraries(test_filtered_sensor_source
+        PRIVATE
+            embedded_drivers
+    )
+
+    add_test(NAME filtered_sensor_source COMMAND test_filtered_sensor_source)
 
     add_executable(test_sensor_source
         tests/test_sensor_source.c
