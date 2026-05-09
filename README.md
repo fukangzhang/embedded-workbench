@@ -41,7 +41,7 @@
 - 主机侧 CMake 工程、主机仿真程序 `host_sim`、29 个主机测试和 GitHub CI
 - 传感器采样模型、告警状态机、告警输出策略、闪烁节拍和数字输出抽象
 - 文本命令链路：串口行缓冲、串口命令服务、串口命令 pump、解析命令、处理配置、格式化响应、命令会话、脚本化 host_sim 输入
-- STM32 固件骨架：启动文件、freestanding libc、基础固件构建、真实 GPIO 初始化开关、USART2 初始化和命令服务自检
+- STM32 固件骨架：启动文件、freestanding libc、基础固件构建、真实 GPIO 初始化开关、USART2 初始化和命令 pump 自检
 - BSP/driver 边界：板级 profile、GPIO 寄存器配置、RCC GPIO/USART 时钟、USART 寄存器 helper、USART 串口 IO 适配器、STM32F401RE GPIO/USART2 地址绑定、板级 USART2 初始化
 - FreeRTOS 骨架：任务模型、RTOS port 接口、FreeRTOS task/queue 创建、告警事件流和输出节拍接入
 - C 代码学习注释：关键 `.c/.h` 文件和测试都已经补充初学者导向注释
@@ -89,6 +89,7 @@
    - `docs/learning/2026-05-09-STM32板级USART2初始化.md`
    - `docs/learning/2026-05-09-固件USART2初始化链路自检.md`
    - `docs/learning/2026-05-09-固件USART2命令服务自检.md`
+   - `docs/learning/2026-05-09-串口命令Pump.md`
    - 对应代码：`bsp/`、`drivers/src/stm32_*.c`、`firmware/src/main.c`
 
 6. FreeRTOS 骨架：
