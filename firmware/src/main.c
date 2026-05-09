@@ -10,13 +10,11 @@
 #include "embedded_workbench/rtos_task_model.h"
 #include "embedded_workbench/sensor_sample.h"
 #include "embedded_workbench/stm32_board_gpio_init.h"
+#include "embedded_workbench/stm32_board_usart2_init.h"
+#include "embedded_workbench/stm32f401re_gpio_bindings.h"
 
 /* firmware/main.c 当前不是最终产品逻辑，而是固件骨架自检入口。
  * 它把 app/drivers/bsp/FreeRTOS 链路尽量串起来，证明目标固件能编译、链接并进入 main。 */
-
-#if defined(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT)
-#include "embedded_workbench/stm32f401re_gpio_bindings.h"
-#endif
 
 #if defined(EW_FIRMWARE_USE_FREERTOS)
 #include "embedded_workbench/rtos_port_freertos.h"
@@ -36,8 +34,10 @@ static alarm_output_sink_t firmware_alarm_output_sink = {0};
 /* 下面这组不是 STM32 真实地址，而是固件自检用的模拟寄存器。
  * 真实地址绑定在 stm32f401re_gpio_bindings 模块里，当前 main 仍然保持可构建、可链接的安全自检。 */
 static volatile uint32_t firmware_rcc_ahb1enr = 0u;
+static volatile uint32_t firmware_rcc_apb1enr = 0u;
 static stm32_gpio_registers_t firmware_gpioa_registers = {0};
 static stm32_gpio_registers_t firmware_gpiob_registers = {0};
+static stm32_usart_registers_t firmware_usart2_registers = {0};
 
 static bool firmware_alarm_output_self_check(void)
 {
@@ -79,6 +79,39 @@ static bool gpio_pin_is_output(const stm32_gpio_registers_t *registers, unsigned
     return mode == 1u;
 }
 
+static bool gpio_pin_is_alternate(const stm32_gpio_registers_t *registers, unsigned int pin)
+{
+    uint32_t mode = 0u;
+
+    if (registers == 0 || pin > 15u) {
+        return false;
+    }
+
+    /* MODER 每个 pin 占两位，10 表示 alternate function 模式。 */
+    mode = (registers->moder >> (pin * 2u)) & 3u;
+
+    return mode == 2u;
+}
+
+static bool gpio_pin_has_alternate_function(
+    const stm32_gpio_registers_t *registers,
+    unsigned int pin,
+    uint32_t expected_alternate_function)
+{
+    uint32_t alternate_register = 0u;
+    uint32_t shift = 0u;
+
+    if (registers == 0 || pin > 15u || expected_alternate_function > 15u) {
+        return false;
+    }
+
+    /* AFRL 管 pin0-7，AFRH 管 pin8-15；每个 pin 占四位，AF7 就写入数值 7。 */
+    alternate_register = pin < 8u ? registers->afrl : registers->afrh;
+    shift = (pin % 8u) * 4u;
+
+    return ((alternate_register >> shift) & 15u) == expected_alternate_function;
+}
+
 static bool firmware_stm32_gpio_init_self_check(void)
 {
     const board_profile_t *profile = board_profile_default();
@@ -113,6 +146,75 @@ static bool firmware_stm32_gpio_init_self_check(void)
            gpio_pin_is_output(&firmware_gpioa_registers, profile->alarm_led.pin) &&
            gpio_pin_is_output(&firmware_gpiob_registers, profile->alarm_buzzer.pin) &&
            gpio_pin_is_output(&firmware_gpiob_registers, profile->alarm_actuator.pin);
+}
+
+static bool firmware_stm32_usart2_init_self_check(void)
+{
+    size_t usart_clock_count = 0u;
+    const stm32_rcc_usart_clock_peripheral_t *usart_clock_peripherals =
+        stm32f401re_usart_clock_peripherals(&usart_clock_count);
+    board_pin_t tx_pin = stm32f401re_usart2_tx_pin();
+    board_pin_t rx_pin = stm32f401re_usart2_rx_pin();
+    stm32_rcc_gpio_clock_port_t gpio_clock_ports[] = {
+        {"PA", 0u},
+    };
+    stm32_gpio_config_port_t gpio_ports[] = {
+        {"PA", &firmware_gpioa_registers},
+    };
+    stm32_rcc_gpio_clock_context_t gpio_clock_context;
+    stm32_gpio_config_context_t gpio_context;
+    stm32_rcc_usart_clock_context_t usart_clock_context;
+    stm32_usart_config_t usart_config = stm32_usart_config_default(SystemCoreClock, 9600u);
+
+    /* USART2 自检仍然写模拟寄存器：
+     * - GPIOA 模拟 PA2/PA3 的 MODER/AFRL
+     * - APB1ENR 模拟 USART2 时钟 bit17
+     * - usart2_registers 模拟 BRR/CR1
+     * 这证明固件入口能串起板级 USART2 初始化链路，但不证明真实串口已经输出波形。 */
+    firmware_rcc_ahb1enr = 0u;
+    firmware_rcc_apb1enr = 0u;
+    firmware_gpioa_registers.moder = 0u;
+    firmware_gpioa_registers.otyper = 0u;
+    firmware_gpioa_registers.ospeedr = 0u;
+    firmware_gpioa_registers.pupdr = 0u;
+    firmware_gpioa_registers.afrl = 0u;
+    firmware_gpioa_registers.afrh = 0u;
+    firmware_usart2_registers.sr = 0u;
+    firmware_usart2_registers.dr = 0u;
+    firmware_usart2_registers.brr = 0u;
+    firmware_usart2_registers.cr1 = 0u;
+    firmware_usart2_registers.cr2 = 0u;
+    firmware_usart2_registers.cr3 = 0u;
+
+    return stm32_rcc_gpio_clock_init(&gpio_clock_context, &firmware_rcc_ahb1enr, gpio_clock_ports, 1u) &&
+           stm32_gpio_config_init(&gpio_context, gpio_ports, 1u) &&
+           stm32_rcc_usart_clock_init(
+               &usart_clock_context,
+               &firmware_rcc_apb1enr,
+               usart_clock_peripherals,
+               usart_clock_count) &&
+           stm32_board_usart2_init(
+               &gpio_clock_context,
+               &gpio_context,
+               &usart_clock_context,
+               &firmware_usart2_registers,
+               &usart_config) &&
+           (firmware_rcc_ahb1enr & (1u << 0u)) == (1u << 0u) &&
+           (firmware_rcc_apb1enr & (1u << STM32F401RE_USART2_APB1ENR_BIT)) ==
+               (1u << STM32F401RE_USART2_APB1ENR_BIT) &&
+           gpio_pin_is_alternate(&firmware_gpioa_registers, tx_pin.pin) &&
+           gpio_pin_is_alternate(&firmware_gpioa_registers, rx_pin.pin) &&
+           gpio_pin_has_alternate_function(
+               &firmware_gpioa_registers,
+               tx_pin.pin,
+               STM32F401RE_USART2_GPIO_AF) &&
+           gpio_pin_has_alternate_function(
+               &firmware_gpioa_registers,
+               rx_pin.pin,
+               STM32F401RE_USART2_GPIO_AF) &&
+           firmware_usart2_registers.brr == 1667u &&
+           (firmware_usart2_registers.cr1 & ((1u << 13u) | (1u << 3u) | (1u << 2u))) ==
+               ((1u << 13u) | (1u << 3u) | (1u << 2u));
 }
 
 #if defined(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT)
@@ -195,6 +297,7 @@ int main(void)
         response_format_status(response, sizeof(response), firmware_last_state, &sample) &&
         firmware_alarm_output_self_check() &&
         firmware_stm32_gpio_init_self_check() &&
+        firmware_stm32_usart2_init_self_check() &&
         freertos_ready &&
         real_gpio_ready) {
         firmware_self_check = 1;
