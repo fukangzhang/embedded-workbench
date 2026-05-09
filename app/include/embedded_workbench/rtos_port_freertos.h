@@ -18,6 +18,7 @@ typedef struct {
     QueueHandle_t command_queue;
     QueueHandle_t response_queue;
     QueueHandle_t alarm_event_queue;
+    QueueHandle_t config_update_queue;
 
     /* 输出任务需要一个 sink，把“告警输出命令”真正落到 LED/蜂鸣器/执行器。
      * 这里存指针而不是直接存对象，是为了后续可以接真实 GPIO 后端或测试假后端。 */

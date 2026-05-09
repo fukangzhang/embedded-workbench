@@ -50,10 +50,13 @@ typedef struct {
     QueueHandle_t command_queue;
     QueueHandle_t response_queue;
     QueueHandle_t alarm_event_queue;
+    QueueHandle_t config_update_queue;
 } freertos_rtos_port_context_t;
 ```
 
 `response_queue` 的元素类型是固定大小的 `rtos_response_message_t`，当前文本缓冲区是 512 字节，足够容纳 `CONFIG` 加 `STATUS` 这种较长响应。
+
+`config_update_queue` 的元素类型是完整的 `alarm_config_t`。它用于把通信任务里 `SET` 命令产生的新阈值配置同步给环境处理任务。这里传完整结构体快照，而不是传指针，是为了避免跨 task 生命周期和并发读写问题。
 
 `freertos_rtos_port_init()` 负责创建这些队列，并把操作表填进通用的 `rtos_port_t`。
 

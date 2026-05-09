@@ -27,6 +27,7 @@ static const rtos_queue_descriptor_t queues[] = {
     {RTOS_QUEUE_COMMAND, "command_queue", sizeof(command_t), 4u},
     {RTOS_QUEUE_RESPONSE, "response_queue", sizeof(rtos_response_message_t), 4u},
     {RTOS_QUEUE_ALARM_EVENT, "alarm_event_queue", sizeof(alarm_event_t), 4u},
+    {RTOS_QUEUE_CONFIG_UPDATE, "config_update_queue", sizeof(alarm_config_t), 2u},
 };
 
 size_t rtos_task_model_task_count(void)

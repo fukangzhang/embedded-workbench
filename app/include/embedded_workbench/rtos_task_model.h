@@ -24,7 +24,9 @@ typedef enum {
     /* communication task 输出给外部接口的响应文本。 */
     RTOS_QUEUE_RESPONSE = 2,
     /* env_process -> alarm_output。 */
-    RTOS_QUEUE_ALARM_EVENT = 3
+    RTOS_QUEUE_ALARM_EVENT = 3,
+    /* communication -> env_process：同步 SET 命令产生的新告警配置快照。 */
+    RTOS_QUEUE_CONFIG_UPDATE = 4
 } rtos_queue_id_t;
 
 typedef struct {

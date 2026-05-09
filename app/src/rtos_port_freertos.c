@@ -35,13 +35,14 @@ static QueueHandle_t create_queue(rtos_queue_id_t id, size_t expected_item_size)
 
 static bool context_is_ready(const freertos_rtos_port_context_t *context)
 {
-    /* FreeRTOS port 的最小可用条件：四条队列都已经创建好。
+    /* FreeRTOS port 的最小可用条件：任务间通信队列都已经创建好。
      * alarm_output_sink 可以为空，因为早期构建阶段允许只验证任务/队列链路。 */
     return context != 0 &&
            context->sensor_sample_queue != 0 &&
            context->command_queue != 0 &&
            context->response_queue != 0 &&
-           context->alarm_event_queue != 0;
+           context->alarm_event_queue != 0 &&
+           context->config_update_queue != 0;
 }
 
 static bool tasks_are_created(const freertos_rtos_port_context_t *context)
@@ -53,7 +54,7 @@ static bool tasks_are_created(const freertos_rtos_port_context_t *context)
            context->alarm_output_task != 0;
 }
 
-static void delay_for_descriptor(rtos_task_id_t id)
+static TickType_t ticks_for_descriptor(rtos_task_id_t id)
 {
     const rtos_task_descriptor_t *descriptor = rtos_task_model_find_task(id);
     uint32_t period_ms = 1000u;
@@ -64,7 +65,12 @@ static void delay_for_descriptor(rtos_task_id_t id)
 
     /* 当前 tick 换算还很粗糙，先用毫秒数直接构建骨架；
      * 后续接真实板级 tick 配置时再引入 pdMS_TO_TICKS。 */
-    vTaskDelay((TickType_t)period_ms);
+    return (TickType_t)period_ms;
+}
+
+static void delay_for_descriptor(rtos_task_id_t id)
+{
+    vTaskDelay(ticks_for_descriptor(id));
 }
 
 static bool freertos_submit_sensor_sample(void *context, const sensor_sample_t *sample)
@@ -116,6 +122,23 @@ static bool freertos_publish_alarm_event(void *context, alarm_state_t state)
     return xQueueSend(freertos_context->alarm_event_queue, &event, (TickType_t)0) == pdPASS;
 }
 
+static void freertos_drain_config_updates(
+    freertos_rtos_port_context_t *context,
+    environment_processor_t *processor)
+{
+    alarm_config_t next_config;
+
+    if (context == 0 || context->config_update_queue == 0 || processor == 0) {
+        return;
+    }
+
+    /* 配置更新是小结构体快照，队列里可能短时间积累多次 SET。
+     * 环境任务每轮先把它们全部取出，最终 processor 持有最新合法配置。 */
+    while (xQueueReceive(context->config_update_queue, &next_config, (TickType_t)0) == pdPASS) {
+        (void)environment_processor_update_config(processor, &next_config);
+    }
+}
+
 static void env_process_task(void *parameter)
 {
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
@@ -134,11 +157,16 @@ static void env_process_task(void *parameter)
     }
 
     for (;;) {
-        /* 环境处理任务阻塞等待传感器采样，收到后更新状态并把状态事件发给输出任务。 */
+        /* 环境处理任务先消费配置更新，再等一小段时间接收 sample。
+         * 这样即使暂时没有新采样，SET 命令也能在短周期内同步到 processor。 */
+        if (processor_ready) {
+            freertos_drain_config_updates(context, &processor);
+        }
+
         if (processor_ready &&
             context != 0 &&
             context->sensor_sample_queue != 0 &&
-            xQueueReceive(context->sensor_sample_queue, &sample, portMAX_DELAY) == pdPASS) {
+            xQueueReceive(context->sensor_sample_queue, &sample, ticks_for_descriptor(RTOS_TASK_ENV_PROCESS)) == pdPASS) {
             (void)environment_processor_process_sample(&processor, &sample);
         } else if (!processor_ready) {
             delay_for_descriptor(RTOS_TASK_ENV_PROCESS);
@@ -146,11 +174,21 @@ static void env_process_task(void *parameter)
     }
 }
 
+static bool freertos_submit_config_update(freertos_rtos_port_context_t *context, const alarm_config_t *config)
+{
+    if (context == 0 || context->config_update_queue == 0 || config == 0) {
+        return false;
+    }
+
+    return xQueueSend(context->config_update_queue, config, (TickType_t)0) == pdPASS;
+}
+
 static void communication_task(void *parameter)
 {
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
     command_t command;
     rtos_response_message_t response = {{0}};
+    command_responder_status_t status;
     alarm_config_t config = alarm_config_default();
     alarm_state_t state = ALARM_STATE_NORMAL;
     sensor_sample_t sample = sensor_sample_make(250, 500u, 300u, 20u);
@@ -168,11 +206,15 @@ static void communication_task(void *parameter)
             context->command_queue != 0 &&
             context->response_queue != 0 &&
             xQueueReceive(context->command_queue, &command, portMAX_DELAY) == pdPASS) {
-            if (command_responder_handle_command(
+            if (command_responder_handle_command_with_status(
                     &responder,
                     &command,
                     response.text,
-                    sizeof(response.text))) {
+                    sizeof(response.text),
+                    &status)) {
+                if (status.config_changed) {
+                    (void)freertos_submit_config_update(context, responder.config);
+                }
                 (void)xQueueSend(context->response_queue, &response, (TickType_t)0);
             }
         } else if (!responder_ready) {
@@ -334,6 +376,9 @@ bool freertos_rtos_port_init(rtos_port_t *port, freertos_rtos_port_context_t *co
     }
     if (context->alarm_event_queue == 0) {
         context->alarm_event_queue = create_queue(RTOS_QUEUE_ALARM_EVENT, sizeof(freertos_alarm_event_t));
+    }
+    if (context->config_update_queue == 0) {
+        context->config_update_queue = create_queue(RTOS_QUEUE_CONFIG_UPDATE, sizeof(alarm_config_t));
     }
 
     if (!context_is_ready(context)) {
