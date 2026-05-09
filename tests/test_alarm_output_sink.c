@@ -4,6 +4,7 @@
 #include "embedded_workbench/alarm_output_sink.h"
 
 typedef struct {
+    /* fake sink 记录调用次数和最后写入值，让测试能观察 apply 的调用顺序。 */
     int indicator_calls;
     int buzzer_calls;
     int actuator_calls;
@@ -113,6 +114,7 @@ int main(void)
         return 2;
     }
 
+    /* 下面模拟第二步失败：indicator 已经调用，buzzer 失败后 actuator 不应再调用。 */
     fake.fail_buzzer = true;
     fake.indicator_calls = 0;
     fake.buzzer_calls = 0;

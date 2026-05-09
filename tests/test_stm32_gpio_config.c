@@ -35,6 +35,7 @@ static uint32_t with_one_bit_field(uint32_t base, unsigned int pin, bool enabled
 
 int main(void)
 {
+    /* gpioa 初始为全 1，gpiob 初始为全 0，用来确认配置函数只改目标 pin 的字段。 */
     stm32_gpio_registers_t gpioa = {0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu};
     stm32_gpio_registers_t gpiob = {0u, 0u, 0u, 0u};
     stm32_gpio_config_port_t ports[] = {
@@ -59,6 +60,7 @@ int main(void)
     config.output_type = STM32_GPIO_OUTPUT_PUSH_PULL;
     config.speed = STM32_GPIO_SPEED_HIGH;
     config.pull = STM32_GPIO_PULL_UP;
+    /* PA5 验证推挽/高速/上拉如何写入 MODER/OTYPER/OSPEEDR/PUPDR。 */
     if (expect_true(stm32_gpio_configure_output(&context, &led_pin, &config)) != 0 ||
         expect_u32(gpioa.moder, with_two_bit_field(0xffffffffu, 5u, 1u)) != 0 ||
         expect_u32(gpioa.otyper, with_one_bit_field(0xffffffffu, 5u, false)) != 0 ||
@@ -70,6 +72,7 @@ int main(void)
     config.output_type = STM32_GPIO_OUTPUT_OPEN_DRAIN;
     config.speed = STM32_GPIO_SPEED_VERY_HIGH;
     config.pull = STM32_GPIO_PULL_DOWN;
+    /* PB6 验证开漏/最高速/下拉这一组配置。 */
     if (expect_true(stm32_gpio_configure_output(&context, &buzzer_pin, &config)) != 0 ||
         expect_u32(gpiob.moder, with_two_bit_field(0u, 6u, 1u)) != 0 ||
         expect_u32(gpiob.otyper, with_one_bit_field(0u, 6u, true)) != 0 ||
@@ -83,6 +86,7 @@ int main(void)
     gpioa_ospeedr_before_error = gpioa.ospeedr;
     gpioa_pupdr_before_error = gpioa.pupdr;
 
+    /* 失败路径不能改动已经存在的寄存器值。 */
     if (expect_false(stm32_gpio_configure_output(&context, &unknown_port_pin, &config)) != 0 ||
         expect_false(stm32_gpio_configure_output(&context, &invalid_pin, &config)) != 0 ||
         expect_false(stm32_gpio_configure_output(&context, &led_pin, 0)) != 0 ||

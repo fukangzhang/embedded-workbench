@@ -35,6 +35,8 @@ static uint32_t with_one_bit_field(uint32_t base, unsigned int pin, bool enabled
 
 int main(void)
 {
+    /* 这个测试把 RCC 模拟寄存器和 GPIO 模拟寄存器串起来，
+     * 验证 board_profile 的三个告警输出脚能被统一初始化。 */
     const board_profile_t *profile = board_profile_default();
     volatile uint32_t ahb1enr = 0u;
     stm32_gpio_registers_t gpioa = {0u, 0u, 0u, 0u};
@@ -60,6 +62,7 @@ int main(void)
     output_config.output_type = STM32_GPIO_OUTPUT_OPEN_DRAIN;
     output_config.speed = STM32_GPIO_SPEED_HIGH;
     output_config.pull = STM32_GPIO_PULL_UP;
+    /* 显式配置路径：三个输出脚都应该打开端口时钟并写入指定 GPIO 配置。 */
     if (expect_true(stm32_board_gpio_init_alarm_outputs(
             profile,
             &clock_context,
@@ -104,6 +107,8 @@ int main(void)
     ahb1enr = 0u;
     gpioa.moder = 0u;
     gpiob.moder = 0u;
+    /* 第二个输出脚缺少 RCC/GPIO 绑定时，流程应失败；
+     * 但第一个已经初始化的 LED 模拟寄存器会保留已完成的动作。 */
     if (expect_false(stm32_board_gpio_init_alarm_outputs(
             &missing_buzzer_clock_profile,
             &clock_context,

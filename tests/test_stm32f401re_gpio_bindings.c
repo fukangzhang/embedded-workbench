@@ -55,6 +55,7 @@ int main(void)
     }
 
     output_ports = stm32f401re_gpio_output_ports(&count);
+    /* BSRR 地址来自 GPIO base + BSRR offset；这里同样只比较数值，不解引用。 */
     if (expect_size(count, 2u) != 0 ||
         expect_string(output_ports[0].port, "PA") != 0 ||
         expect_uintptr(

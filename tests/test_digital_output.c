@@ -4,6 +4,7 @@
 #include "embedded_workbench/digital_output.h"
 
 typedef struct {
+    /* fake backend 让测试观察 digital_output_write 是否把 pin/level 原样传给后端。 */
     int write_calls;
     const board_pin_t *last_pin;
     digital_output_level_t last_level;
@@ -64,6 +65,7 @@ int main(void)
     digital_output_controller_t controller = {&ops, &fake};
     board_pin_t invalid_pin = {0};
 
+    /* 成功路径：公共包装函数校验后，应调用底层 write ops。 */
     if (expect_true(digital_output_write(&controller, &pin, DIGITAL_OUTPUT_LEVEL_HIGH)) != 0 ||
         expect_int(fake.write_calls, 1) != 0 ||
         expect_ptr(fake.last_pin, &pin) != 0 ||
@@ -71,6 +73,7 @@ int main(void)
         return 1;
     }
 
+    /* 防御性输入检查：无 controller、无 pin、非法 pin、非法 level 都失败。 */
     if (expect_false(digital_output_write(0, &pin, DIGITAL_OUTPUT_LEVEL_LOW)) != 0 ||
         expect_false(digital_output_write(&controller, 0, DIGITAL_OUTPUT_LEVEL_LOW)) != 0 ||
         expect_false(digital_output_write(&controller, &invalid_pin, DIGITAL_OUTPUT_LEVEL_LOW)) != 0 ||
@@ -79,6 +82,7 @@ int main(void)
     }
 
     fake.fail_write = true;
+    /* 底层后端返回失败时，包装函数也必须把失败传回上层。 */
     if (expect_false(digital_output_write(&controller, &pin, DIGITAL_OUTPUT_LEVEL_LOW)) != 0 ||
         expect_int(fake.write_calls, 2) != 0 ||
         expect_level(fake.last_level, DIGITAL_OUTPUT_LEVEL_LOW) != 0) {

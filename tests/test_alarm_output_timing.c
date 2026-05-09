@@ -28,6 +28,7 @@ static int expect_indicator_state(
         return 1;
     }
 
+    /* helper 把“函数成功”和“亮灭结果正确”合并成一个断言，主测试更容易读。 */
     return expect_bool(is_on, expected);
 }
 
@@ -73,6 +74,7 @@ int main(void)
     command.buzzer_enabled = false;
     command.actuator_enabled = false;
     command.period_ms = 0u;
+    /* period_ms 为 0 时表示不做闪烁相位计算，非 OFF indicator 会保持常亮。 */
     if (expect_indicator_state(&command, 9999u, true) != 0) {
         return 5;
     }
