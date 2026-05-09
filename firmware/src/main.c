@@ -10,6 +10,7 @@
 #include "embedded_workbench/rtos_task_model.h"
 #include "embedded_workbench/serial_command_pump.h"
 #include "embedded_workbench/serial_command_service.h"
+#include "embedded_workbench/filtered_sensor_source.h"
 #include "embedded_workbench/sensor_sample.h"
 #include "embedded_workbench/sequence_sensor_source.h"
 #include "embedded_workbench/stm32_board_gpio_init.h"
@@ -412,13 +413,16 @@ static freertos_rtos_port_context_t firmware_rtos_context = {0};
 static rtos_port_t firmware_rtos_port = {0};
 
 /* Scheduler 构建目前还没有真实传感器驱动，所以先给采集任务一组固定样本。
- * 这组样本会让状态从 normal 走到 warning/alarm，方便后续板上观察告警输出链路。 */
+ * 样本先经过 filtered_sensor_source：第二帧的轻微升高会被平滑，第三帧严重异常
+ * 仍会把状态推到 alarm，方便后续观察“滤波不等于忽略危险输入”。 */
 static const sensor_sample_t firmware_freertos_demo_samples[] = {
     {250, 500u, 300u, 20u},
     {360, 600u, 250u, 20u},
-    {460, 700u, 80u, 40u},
+    {700, 950u, 0u, 900u},
 };
 static sequence_sensor_source_t firmware_freertos_sequence_source = {0};
+static filtered_sensor_source_t firmware_freertos_filtered_sensor_source = {0};
+static sensor_source_t firmware_freertos_raw_sensor_source = {0};
 static sensor_source_t firmware_freertos_sensor_source = {0};
 
 #if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER) || \
@@ -492,7 +496,20 @@ static bool firmware_freertos_runtime_context_init(void)
         return false;
     }
 
-    firmware_freertos_sensor_source = sequence_sensor_source_as_source(&firmware_freertos_sequence_source);
+    firmware_freertos_raw_sensor_source = sequence_sensor_source_as_source(&firmware_freertos_sequence_source);
+
+    /* 这里在装配层包滤波，而不是改 sensor_acquisition 或 FreeRTOS task：
+     * task 仍然只认识 sensor_source_t，是否滤波由固件入口选择。 */
+    if (!filtered_sensor_source_init(
+            &firmware_freertos_filtered_sensor_source,
+            &firmware_freertos_raw_sensor_source,
+            1u,
+            2u)) {
+        return false;
+    }
+
+    firmware_freertos_sensor_source =
+        filtered_sensor_source_as_source(&firmware_freertos_filtered_sensor_source);
 
     /* FreeRTOS task 只拿 context 指针；scheduler 真正启动后，采集任务从这里读 source，
      * 输出任务从这里拿 sink，所以这些字段必须在 vTaskStartScheduler 前准备好。 */
