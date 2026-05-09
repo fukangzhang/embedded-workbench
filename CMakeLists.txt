@@ -74,6 +74,7 @@ add_library(embedded_app
     app/src/alarm_state.c
     app/src/environment_processor.c
     app/src/command_handler.c
+    app/src/command_responder.c
     app/src/command_session.c
     app/src/response_format.c
     app/src/sensor_acquisition.c
@@ -490,6 +491,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME command_handler COMMAND test_command_handler)
+
+    add_executable(test_command_responder
+        tests/test_command_responder.c
+    )
+
+    target_link_libraries(test_command_responder
+        PRIVATE
+            embedded_app
+    )
+
+    add_test(NAME command_responder COMMAND test_command_responder)
 
     add_executable(test_command_session
         tests/test_command_session.c

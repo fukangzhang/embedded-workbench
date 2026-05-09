@@ -3,6 +3,7 @@
 #include "embedded_workbench/alarm_output.h"
 #include "embedded_workbench/alarm_output_timing.h"
 #include "embedded_workbench/alarm_state.h"
+#include "embedded_workbench/command_responder.h"
 #include "embedded_workbench/environment_processor.h"
 #include "embedded_workbench/rtos_task_model.h"
 #include "embedded_workbench/sensor_acquisition.h"
@@ -150,17 +151,32 @@ static void communication_task(void *parameter)
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
     command_t command;
     rtos_response_message_t response = {{0}};
+    alarm_config_t config = alarm_config_default();
+    alarm_state_t state = ALARM_STATE_NORMAL;
+    sensor_sample_t sample = sensor_sample_make(250, 500u, 300u, 20u);
+    command_responder_t responder;
+    bool responder_ready = false;
+
+    if (context != 0) {
+        responder_ready = command_responder_init(&responder, &config, &state, &sample);
+    }
 
     for (;;) {
-        /* 当前通信任务还是骨架：收到命令后回一个 OK，用来验证队列链路。 */
-        if (context != 0 &&
+        /* 通信任务处理已经解析好的 command_t，并把响应文本送回 response_queue。 */
+        if (responder_ready &&
+            context != 0 &&
             context->command_queue != 0 &&
             context->response_queue != 0 &&
             xQueueReceive(context->command_queue, &command, portMAX_DELAY) == pdPASS) {
-            response.text[0] = 'O';
-            response.text[1] = 'K';
-            response.text[2] = '\0';
-            (void)xQueueSend(context->response_queue, &response, (TickType_t)0);
+            if (command_responder_handle_command(
+                    &responder,
+                    &command,
+                    response.text,
+                    sizeof(response.text))) {
+                (void)xQueueSend(context->response_queue, &response, (TickType_t)0);
+            }
+        } else if (!responder_ready) {
+            delay_for_descriptor(RTOS_TASK_COMMUNICATION);
         }
     }
 }

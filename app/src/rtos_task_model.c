@@ -2,6 +2,7 @@
 
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/command_parser.h"
+#include "embedded_workbench/rtos_port.h"
 #include "embedded_workbench/sensor_sample.h"
 
 /* rtos_task_model 是 RTOS 设计的“清单”。
@@ -11,11 +12,6 @@ typedef struct {
     /* 告警事件当前只携带状态，后续可以扩展时间戳或样本摘要。 */
     alarm_state_t state;
 } alarm_event_t;
-
-typedef struct {
-    /* response queue 放固定大小消息，避免队列里传递动态内存指针。 */
-    char text[128];
-} response_message_t;
 
 static const rtos_task_descriptor_t tasks[] = {
     /* 优先级数值越大通常表示越高优先级；这里让环境处理略高于通信和输出骨架。 */
@@ -29,7 +25,7 @@ static const rtos_queue_descriptor_t queues[] = {
     /* 队列长度先保持很小，便于早期测试暴露生产/消费节奏问题。 */
     {RTOS_QUEUE_SENSOR_SAMPLE, "sensor_sample_queue", sizeof(sensor_sample_t), 4u},
     {RTOS_QUEUE_COMMAND, "command_queue", sizeof(command_t), 4u},
-    {RTOS_QUEUE_RESPONSE, "response_queue", sizeof(response_message_t), 4u},
+    {RTOS_QUEUE_RESPONSE, "response_queue", sizeof(rtos_response_message_t), 4u},
     {RTOS_QUEUE_ALARM_EVENT, "alarm_event_queue", sizeof(alarm_event_t), 4u},
 };
 

@@ -128,6 +128,7 @@
 - `2026-05-09-串口命令服务.md`
 - `2026-05-09-串口命令Pump.md`
 - `2026-05-09-SAMPLE命令.md`
+- `2026-05-09-命令响应步骤.md`
 - `2026-05-08-命令处理与配置应用.md`
 - `2026-05-08-响应格式规范.md`
 - `2026-05-08-主机仿真交互闭环.md`
@@ -146,11 +147,14 @@
 - `app/src/serial_command_pump.c`
 - `app/include/embedded_workbench/command_handler.h`
 - `app/src/command_handler.c`
+- `app/include/embedded_workbench/command_responder.h`
+- `app/src/command_responder.c`
 - `app/include/embedded_workbench/response_format.h`
 - `app/src/response_format.c`
 - `tools/host_sim/main.c`
 - `tests/test_command_parser.c`
 - `tests/test_command_handler.c`
+- `tests/test_command_responder.c`
 - `tests/test_response_format.c`
 - `tests/test_serial_command_service.c`
 - `tests/test_serial_command_pump.c`
@@ -163,6 +167,7 @@
 - 串口命令服务如何把逐字节输入、行缓冲、命令会话和 writer callback 接起来
 - 串口命令 pump 如何从 reader callback 有界读取字节并喂给命令服务
 - `SAMPLE` 命令如何在没有真实传感器时注入一帧样本并触发状态重算
+- `command_responder` 如何把已解析命令转成完整响应文本
 - 配置命令为什么不直接散落在 main 函数里处理
 - 响应格式为什么要单独模块化
 - 主机仿真如何串起“输入命令 -> 处理 -> 输出响应”
@@ -329,6 +334,7 @@
 - `2026-05-09-传感器来源接口.md`
 - `2026-05-09-传感器采集步骤.md`
 - `2026-05-09-环境处理步骤.md`
+- `2026-05-09-命令响应步骤.md`
 - `2026-05-08-FreeRTOS调度器显式启动入口.md`
 - `2026-05-08-FreeRTOS告警事件流骨架.md`
 - `2026-05-08-FreeRTOS告警输出节拍接入.md`
@@ -346,6 +352,8 @@
 - `app/src/sensor_acquisition.c`
 - `app/include/embedded_workbench/environment_processor.h`
 - `app/src/environment_processor.c`
+- `app/include/embedded_workbench/command_responder.h`
+- `app/src/command_responder.c`
 - `firmware/src/main.c`
 
 看完要能解释：
@@ -355,6 +363,7 @@
 - queue 如何连接 task 之间的数据流
 - `sensor_acquire_task` 如何通过 `sensor_acquisition` 从可选 `sensor_source` 读取 sample 并发送到队列
 - `env_process_task` 如何通过 `environment_processor` 把 sample 变成 alarm event
+- `communication_task` 如何通过 `command_responder` 把 command queue 里的命令变成 response queue 里的文本
 - `xTaskCreate` 创建任务，但不等于调度器已经启动
 - `vTaskStartScheduler` 为什么要通过显式开关控制
 - 告警输出 task 为什么是“事件更新状态 + 周期刷新 indicator”
@@ -407,11 +416,17 @@ serial_line
   -> command_handler
   -> response_format
 
+command_t
+  -> command_responder
+  -> command_handler
+  -> response_format
+
 rtos_task_model
   -> rtos_port
   -> rtos_port_freertos
   -> sensor_acquisition
   -> environment_processor
+  -> command_responder
   -> sensor_source
   -> alarm_output_sink
   -> firmware/main.c

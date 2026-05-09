@@ -7,9 +7,11 @@
 #include "embedded_workbench/command_parser.h"
 #include "embedded_workbench/sensor_sample.h"
 
+#define RTOS_RESPONSE_MESSAGE_TEXT_SIZE 512u
+
 typedef struct {
     /* 固定长度响应消息适合放进 RTOS queue，避免在任务之间传递堆内存。 */
-    char text[128];
+    char text[RTOS_RESPONSE_MESSAGE_TEXT_SIZE];
 } rtos_response_message_t;
 
 /* RTOS 端口抽象：主机测试可以替换成 fake，目标板可以接 FreeRTOS 队列。 */

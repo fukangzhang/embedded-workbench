@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "embedded_workbench/command_parser.h"
+#include "embedded_workbench/rtos_port.h"
 #include "embedded_workbench/rtos_task_model.h"
 #include "embedded_workbench/sensor_sample.h"
 
@@ -72,9 +73,19 @@ int main(void)
         return 7;
     }
 
+    queue = rtos_task_model_find_queue(RTOS_QUEUE_RESPONSE);
+    if (queue != 0) {
+        if (expect_size(queue->item_size, sizeof(rtos_response_message_t)) != 0 ||
+            expect_size(RTOS_RESPONSE_MESSAGE_TEXT_SIZE, 512u) != 0) {
+            return 8;
+        }
+    } else {
+        return 8;
+    }
+
     queue = rtos_task_model_queue_at(99u);
     if (queue != 0) {
-        return 8;
+        return 9;
     }
 
     /* 越界访问返回 0，调用者可以安全判断“没找到”。 */

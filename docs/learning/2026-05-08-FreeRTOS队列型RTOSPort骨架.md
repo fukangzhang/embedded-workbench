@@ -20,7 +20,7 @@ queue 可以理解为任务之间传数据的管道。
 - 传感器任务采集 `sensor_sample_t`
 - 把样本发送到 `sensor_sample_queue`
 - 处理任务从队列里取出样本，通过 `environment_processor` 判断告警状态
-- 通信任务把状态格式化成响应消息
+- 通信任务通过 `command_responder` 把已解析命令格式化成响应消息
 
 当前 `sensor_acquire_task` 已经通过 `sensor_acquisition` 从可选 `sensor_source` 读取 sample，再用 submit callback 调到 `xQueueSend`，放入 `sensor_sample_queue`。如果 source 为空，它仍然只保持周期任务骨架，方便早期固件构建验证。
 
@@ -42,15 +42,18 @@ FreeRTOS queue 默认是“按值复制”。也就是说，`xQueueSend` 会把�
 所以这一阶段只验证队列 API 能接入，调度器启动留到下一步。
 
 ## rtos_port_freertos 做了什么？
-新增的上下文结构保存三个 FreeRTOS queue handle：
+新增的上下文结构保存 FreeRTOS queue handle：
 
 ```c
 typedef struct {
     QueueHandle_t sensor_sample_queue;
     QueueHandle_t command_queue;
     QueueHandle_t response_queue;
+    QueueHandle_t alarm_event_queue;
 } freertos_rtos_port_context_t;
 ```
+
+`response_queue` 的元素类型是固定大小的 `rtos_response_message_t`，当前文本缓冲区是 512 字节，足够容纳 `CONFIG` 加 `STATUS` 这种较长响应。
 
 `freertos_rtos_port_init()` 负责创建这些队列，并把操作表填进通用的 `rtos_port_t`。
 
