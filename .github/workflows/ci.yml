@@ -105,6 +105,22 @@ jobs:
       - name: Build firmware with real STM32 GPIO init
         run: cmake --build build-fw-real-gpio
 
+      - name: Configure firmware with real STM32 USART2 command loop
+        env:
+          ZIG_EXE: ${{ steps.zig.outputs.zig_exe }}
+          ZIG_AR: ${{ steps.zig.outputs.zig_ar }}
+          ZIG_RANLIB: ${{ steps.zig.outputs.zig_ranlib }}
+        run: |
+          cmake -S . -B build-fw-real-usart2-command -G Ninja \
+            -D CMAKE_TOOLCHAIN_FILE=cmake/toolchains/zig-arm-none-eabi.cmake \
+            -D EW_BUILD_HOST_TOOLS=OFF \
+            -D EW_BUILD_TESTS=OFF \
+            -D EW_BUILD_FIRMWARE=ON \
+            -D EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP=ON
+
+      - name: Build firmware with real STM32 USART2 command loop
+        run: cmake --build build-fw-real-usart2-command
+
   freertos-firmware-build:
     name: FreeRTOS firmware ELF build
     runs-on: ubuntu-latest
