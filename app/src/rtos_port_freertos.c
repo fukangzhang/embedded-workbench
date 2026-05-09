@@ -3,6 +3,7 @@
 #include "embedded_workbench/alarm_output.h"
 #include "embedded_workbench/alarm_output_timing.h"
 #include "embedded_workbench/alarm_state.h"
+#include "embedded_workbench/environment_processor.h"
 #include "embedded_workbench/rtos_task_model.h"
 #include "embedded_workbench/sensor_acquisition.h"
 
@@ -101,24 +102,45 @@ static void sensor_acquire_task(void *parameter)
     }
 }
 
+static bool freertos_publish_alarm_event(void *context, alarm_state_t state)
+{
+    freertos_rtos_port_context_t *freertos_context = (freertos_rtos_port_context_t *)context;
+    freertos_alarm_event_t event;
+
+    if (freertos_context == 0 || freertos_context->alarm_event_queue == 0) {
+        return false;
+    }
+
+    event.state = state;
+    return xQueueSend(freertos_context->alarm_event_queue, &event, (TickType_t)0) == pdPASS;
+}
+
 static void env_process_task(void *parameter)
 {
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
     sensor_sample_t sample;
-    alarm_state_t state = ALARM_STATE_NORMAL;
     alarm_config_t config = alarm_config_default();
-    freertos_alarm_event_t event;
+    environment_processor_t processor;
+    bool processor_ready = false;
+
+    if (context != 0) {
+        processor_ready = environment_processor_init(
+            &processor,
+            &config,
+            ALARM_STATE_NORMAL,
+            freertos_publish_alarm_event,
+            context);
+    }
 
     for (;;) {
         /* 环境处理任务阻塞等待传感器采样，收到后更新状态并把状态事件发给输出任务。 */
-        if (context != 0 &&
+        if (processor_ready &&
+            context != 0 &&
             context->sensor_sample_queue != 0 &&
             xQueueReceive(context->sensor_sample_queue, &sample, portMAX_DELAY) == pdPASS) {
-            state = alarm_state_update(state, &config, &sample);
-            event.state = state;
-            if (context->alarm_event_queue != 0) {
-                (void)xQueueSend(context->alarm_event_queue, &event, (TickType_t)0);
-            }
+            (void)environment_processor_process_sample(&processor, &sample);
+        } else if (!processor_ready) {
+            delay_for_descriptor(RTOS_TASK_ENV_PROCESS);
         }
     }
 }
