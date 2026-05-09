@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* x10 表示“真实值乘以 10”：-400 是 -40.0 C，1000 是 100.0 %RH。 */
 #define SENSOR_TEMPERATURE_MIN_C_X10 (-400)
 #define SENSOR_TEMPERATURE_MAX_C_X10 (850)
 #define SENSOR_HUMIDITY_MIN_RH_X10 (0)
@@ -26,6 +27,7 @@ sensor_sample_t sensor_sample_make(
     uint32_t light_lux,
     uint16_t smoke_ppm);
 
+/* 返回 false 表示 sample 为空，或任一字段超出项目当前接受的物理范围。 */
 bool sensor_sample_is_valid(const sensor_sample_t *sample);
 
 #endif
