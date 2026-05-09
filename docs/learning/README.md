@@ -173,6 +173,7 @@
 - `2026-05-08-STM32RCCGPIO时钟使能.md`
 - `2026-05-09-STM32RCCUSART时钟.md`
 - `2026-05-09-STM32USART寄存器Helper.md`
+- `2026-05-09-STM32USART串口IO适配器.md`
 - `2026-05-08-STM32板级GPIO输出初始化.md`
 - `2026-05-08-STM32F401REGPIO地址绑定.md`
 - `2026-05-09-STM32F401REUSART2绑定.md`
@@ -203,6 +204,8 @@
 - `drivers/src/stm32_rcc_usart_clock.c`
 - `drivers/include/embedded_workbench/stm32_usart.h`
 - `drivers/src/stm32_usart.c`
+- `drivers/include/embedded_workbench/stm32_usart_serial_io.h`
+- `drivers/src/stm32_usart_serial_io.c`
 - `drivers/include/embedded_workbench/stm32_board_gpio_init.h`
 - `drivers/src/stm32_board_gpio_init.c`
 - `drivers/include/embedded_workbench/stm32_board_usart2_init.h`
@@ -225,6 +228,7 @@
 - `tests/test_stm32_rcc_gpio_clock.c`
 - `tests/test_stm32_rcc_usart_clock.c`
 - `tests/test_stm32_usart.c`
+- `tests/test_stm32_usart_serial_io.c`
 - `tests/test_stm32_board_gpio_init.c`
 - `tests/test_stm32_board_usart2_init.c`
 - `tests/test_stm32f401re_gpio_bindings.c`
@@ -241,6 +245,7 @@
 - `stm32_rcc_gpio_clock` 为什么要先打开 GPIO 端口时钟
 - `stm32_rcc_usart_clock` 为什么要单独打开 USART 外设时钟
 - `stm32_usart` 如何配置 BRR、8N1、RE/TE/UE，并轮询 RXNE/TXE
+- `stm32_usart_serial_io` 如何把 USART 单字节读写包装成后续串口命令服务可用的 callback
 - `stm32_board_gpio_init` 如何按 profile 串起 RCC 和 GPIO 配置
 - `stm32_board_usart2_init` 如何按板级顺序串起 GPIOA 时钟、PA2/PA3 AF7、USART2 时钟和 USART 8N1 配置
 - `stm32f401re_gpio_bindings` 为什么只提供地址绑定，不直接访问硬件
