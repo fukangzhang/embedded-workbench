@@ -45,6 +45,7 @@ int main(void)
     board_pin_t unknown_pin = {"PC", 13u, "unknown output"};
     digital_output_level_t level = DIGITAL_OUTPUT_LEVEL_HIGH;
 
+    /* 初始化后，主机模拟后端的三个输出脚都应处于 LOW，且还没有写入动作。 */
     if (expect_true(board_digital_output_init(&controller, &context, profile)) != 0 ||
         expect_pin_level(&context, &profile->alarm_led, DIGITAL_OUTPUT_LEVEL_LOW) != 0 ||
         expect_pin_level(&context, &profile->alarm_buzzer, DIGITAL_OUTPUT_LEVEL_LOW) != 0 ||
@@ -53,6 +54,7 @@ int main(void)
         return 1;
     }
 
+    /* 写 LED 和 buzzer 只应改变对应输出脚，actuator 保持 LOW。 */
     if (expect_true(digital_output_write(&controller, &profile->alarm_led, DIGITAL_OUTPUT_LEVEL_HIGH)) != 0 ||
         expect_true(digital_output_write(&controller, &profile->alarm_buzzer, DIGITAL_OUTPUT_LEVEL_HIGH)) != 0 ||
         expect_pin_level(&context, &profile->alarm_led, DIGITAL_OUTPUT_LEVEL_HIGH) != 0 ||
@@ -62,12 +64,14 @@ int main(void)
         return 2;
     }
 
+    /* 即使 pin 是 profile 中字段的拷贝，只要端口和编号一致，也应该匹配同一个输出。 */
     if (expect_true(digital_output_write(&controller, &copied_led_pin, DIGITAL_OUTPUT_LEVEL_LOW)) != 0 ||
         expect_pin_level(&context, &profile->alarm_led, DIGITAL_OUTPUT_LEVEL_LOW) != 0 ||
         expect_uint(context.write_count, 3u) != 0) {
         return 3;
     }
 
+    /* 未知 pin 不能改变状态，也不能增加 write_count。 */
     if (expect_false(digital_output_write(&controller, &unknown_pin, DIGITAL_OUTPUT_LEVEL_HIGH)) != 0 ||
         expect_uint(context.write_count, 3u) != 0) {
         return 4;

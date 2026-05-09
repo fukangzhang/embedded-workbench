@@ -3,6 +3,7 @@
 #include "embedded_workbench/alarm_output_digital_sink.h"
 
 typedef struct {
+    /* fake digital output 记录每一次 pin/level 写入，模拟底层 GPIO 驱动。 */
     int write_calls;
     int fail_at_call;
     const board_pin_t *pins[6];
@@ -89,6 +90,7 @@ int main(void)
     command.actuator_enabled = true;
     command.period_ms = 250u;
 
+    /* FAST_BLINK 在 digital sink 里被当作“当前需要点亮 LED”，三个输出都写 HIGH。 */
     if (expect_true(alarm_output_sink_apply(&sink, &command)) != 0 ||
         expect_int(fake.write_calls, 3) != 0 ||
         expect_ptr(fake.pins[0], &profile->alarm_led) != 0 ||
@@ -106,6 +108,7 @@ int main(void)
     command.actuator_enabled = false;
     command.period_ms = 0u;
 
+    /* OFF/false/false 应该把 LED、蜂鸣器、执行器都写 LOW。 */
     if (expect_true(alarm_output_sink_apply(&sink, &command)) != 0 ||
         expect_int(fake.write_calls, 3) != 0 ||
         expect_level(fake.levels[0], DIGITAL_OUTPUT_LEVEL_LOW) != 0 ||
@@ -120,6 +123,7 @@ int main(void)
     command.buzzer_enabled = true;
     command.actuator_enabled = true;
 
+    /* 第二次写入失败时，sink_apply 返回 false，并停止在失败点附近。 */
     if (expect_false(alarm_output_sink_apply(&sink, &command)) != 0 ||
         expect_int(fake.write_calls, 2) != 0) {
         return 4;

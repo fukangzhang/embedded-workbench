@@ -22,10 +22,12 @@ int main(void)
 {
     const board_profile_t *profile = 0;
 
+    /* 当前 profile 表里有 F401RE 主目标板和一个预留 F103RB。 */
     if (expect_size(board_profile_count(), 2u) != 0) {
         return 1;
     }
 
+    /* 默认板卡必须是当前项目主线使用的 NUCLEO-F401RE。 */
     profile = board_profile_default();
     if (profile == 0 ||
         expect_true(board_profile_is_valid(profile)) != 0 ||
@@ -38,6 +40,7 @@ int main(void)
         return 2;
     }
 
+    /* find 用 id 查找目标板，后续切板或比较不同 NUCLEO 时会依赖它。 */
     profile = board_profile_find(BOARD_ID_NUCLEO_F103RB);
     if (profile == 0 ||
         expect_true(board_profile_is_valid(profile)) != 0 ||
@@ -56,6 +59,7 @@ int main(void)
         return 5;
     }
 
+    /* 空 profile 不合法，避免 BSP/driver 初始化继续访问空指针。 */
     if (expect_true(!board_profile_is_valid(0)) != 0) {
         return 6;
     }

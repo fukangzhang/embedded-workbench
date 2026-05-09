@@ -20,6 +20,7 @@ static int expect_u32(uint32_t actual, uint32_t expected)
 
 int main(void)
 {
+    /* ahb1enr 用普通变量模拟 RCC AHB1ENR；测试只看对应 bit 是否被置位。 */
     volatile uint32_t ahb1enr = 0u;
     stm32_rcc_gpio_clock_port_t ports[] = {
         {"PA", 0u},
@@ -33,6 +34,7 @@ int main(void)
         return 1;
     }
 
+    /* PA/PB 分别打开 bit0/bit1。 */
     if (expect_true(stm32_rcc_enable_gpio_port_clock(&context, "PA")) != 0 ||
         expect_u32(ahb1enr, 1u << 0u) != 0) {
         return 2;
@@ -49,6 +51,7 @@ int main(void)
         return 4;
     }
 
+    /* 未知端口、非法 bit 和空端口名都失败，且不能改变已有 enable bits。 */
     if (expect_false(stm32_rcc_enable_gpio_port_clock(&context, "PD")) != 0 ||
         expect_false(stm32_rcc_enable_gpio_port_clock(&context, "PZ")) != 0 ||
         expect_false(stm32_rcc_enable_gpio_port_clock(&context, 0)) != 0 ||

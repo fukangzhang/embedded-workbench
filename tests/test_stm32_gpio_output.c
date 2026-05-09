@@ -20,6 +20,8 @@ static int expect_u32(uint32_t actual, uint32_t expected)
 
 int main(void)
 {
+    /* 这里用普通变量模拟 GPIOx_BSRR 寄存器。
+     * 测试运行在主机上，不需要真实 STM32。 */
     volatile uint32_t gpioa_bsrr = 0u;
     volatile uint32_t gpiob_bsrr = 0u;
     static const board_pin_t led_pin = {"PA", 5u, "LD2 user LED / alarm indicator"};
@@ -37,12 +39,14 @@ int main(void)
         return 1;
     }
 
+    /* 写 HIGH 时，BSRR 低 16 位对应 pin 置 1。 */
     if (expect_true(digital_output_write(&controller, &led_pin, DIGITAL_OUTPUT_LEVEL_HIGH)) != 0 ||
         expect_u32(gpioa_bsrr, (uint32_t)(1u << 5u)) != 0 ||
         expect_u32(gpiob_bsrr, 0u) != 0) {
         return 2;
     }
 
+    /* 写 LOW 时，BSRR 高 16 位对应 pin 置 1。 */
     if (expect_true(digital_output_write(&controller, &led_pin, DIGITAL_OUTPUT_LEVEL_LOW)) != 0 ||
         expect_u32(gpioa_bsrr, (uint32_t)(1u << (5u + 16u))) != 0) {
         return 3;
