@@ -14,6 +14,7 @@ param(
         "STATUS state=warning"
     ),
     [string]$LogPath = "",
+    [string]$ReplayLogPath = "",
     [switch]$ListPorts,
     [switch]$NoExpect,
     [switch]$DryRun
@@ -51,6 +52,33 @@ function Write-TranscriptLine {
     Write-Host $Line
 }
 
+function Test-ExpectedText {
+    param(
+        [System.Collections.Generic.List[string]]$Transcript,
+        [string]$Text,
+        [string[]]$ExpectedSnippets,
+        [bool]$Disabled
+    )
+
+    $Failed = $false
+
+    if ($Disabled) {
+        Write-TranscriptLine $Transcript "[vcp] Expectations: disabled"
+        return $false
+    }
+
+    foreach ($Expected in $ExpectedSnippets) {
+        if ($Text.Contains($Expected)) {
+            Write-TranscriptLine $Transcript "[vcp] EXPECT ok: $Expected"
+        } else {
+            Write-TranscriptLine $Transcript "[vcp] EXPECT missing: $Expected"
+            $Failed = $true
+        }
+    }
+
+    return $Failed
+}
+
 $AvailablePorts = [System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object
 
 if ($ListPorts) {
@@ -74,6 +102,9 @@ if ($DryRun) {
     Write-Host "[vcp] Read timeout per command: ${ReadTimeoutMs}ms"
     Write-Host "[vcp] Commands:"
     $Commands | ForEach-Object { Write-Host "[vcp]   $_" }
+    if ($ReplayLogPath.Length -gt 0) {
+        Write-Host "[vcp] Replay log: $ReplayLogPath"
+    }
     if ($NoExpect) {
         Write-Host "[vcp] Expectations: disabled"
     } else {
@@ -82,6 +113,21 @@ if ($DryRun) {
     }
     Write-Host "[vcp] Example real run:"
     Write-Host ".\scripts\verify_freertos_usart2_vcp.ps1 -Port $DisplayPort"
+    exit 0
+}
+
+$Transcript = [System.Collections.Generic.List[string]]::new()
+$ExpectationFailed = $false
+
+if ($ReplayLogPath.Length -gt 0) {
+    $ReplayText = Get-Content -Path $ReplayLogPath -Raw
+    Write-TranscriptLine $Transcript "[vcp] Replaying transcript: $ReplayLogPath"
+    $ExpectationFailed = Test-ExpectedText $Transcript $ReplayText $Expect $NoExpect
+
+    if ($ExpectationFailed) {
+        throw "VCP response expectations failed. Check the transcript for missing expected text."
+    }
+
     exit 0
 }
 
@@ -94,9 +140,7 @@ $Serial.NewLine = "`n"
 $Serial.ReadTimeout = $ReadTimeoutMs
 $Serial.WriteTimeout = $ReadTimeoutMs
 
-$Transcript = [System.Collections.Generic.List[string]]::new()
 $AllResponseText = New-Object System.Text.StringBuilder
-$ExpectationFailed = $false
 
 try {
     $Serial.Open()
@@ -124,17 +168,7 @@ try {
         }
     }
 
-    if (-not $NoExpect) {
-        $AllResponses = $AllResponseText.ToString()
-        foreach ($Expected in $Expect) {
-            if ($AllResponses.Contains($Expected)) {
-                Write-TranscriptLine $Transcript "[vcp] EXPECT ok: $Expected"
-            } else {
-                Write-TranscriptLine $Transcript "[vcp] EXPECT missing: $Expected"
-                $ExpectationFailed = $true
-            }
-        }
-    }
+    $ExpectationFailed = Test-ExpectedText $Transcript $AllResponseText.ToString() $Expect $NoExpect
 } finally {
     if ($Serial.IsOpen) {
         $Serial.Close()

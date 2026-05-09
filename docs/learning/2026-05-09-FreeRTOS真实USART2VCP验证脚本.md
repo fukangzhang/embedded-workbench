@@ -81,6 +81,25 @@ STATUS state=warning
   -Expect "OK result=ok","STATUS state=alarm"
 ```
 
+## 离线回放 transcript
+
+如果已经保存过串口 transcript，可以不连接板子，直接复查里面是否包含期望片段：
+
+```powershell
+.\scripts\verify_freertos_usart2_vcp.ps1 `
+  -ReplayLogPath hardware\logs\freertos-usart2-vcp-2026-05-09.txt
+```
+
+回放模式复用同一套 `-Expect` 和 `-NoExpect` 参数：
+
+```powershell
+.\scripts\verify_freertos_usart2_vcp.ps1 `
+  -ReplayLogPath hardware\logs\freertos-usart2-vcp-2026-05-09.txt `
+  -Expect "OK result=ok","STATUS state=warning"
+```
+
+这样以后你把真实板卡日志提交到验证记录旁边时，可以重复运行脚本确认关键输出没有变。
+
 ## 运行前必须确认什么？
 
 先构建并烧录这个固件：
