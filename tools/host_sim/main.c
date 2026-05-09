@@ -5,6 +5,7 @@
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/app_info.h"
 #include "embedded_workbench/sensor_sample.h"
+#include "embedded_workbench/sequence_sensor_source.h"
 #include "embedded_workbench/serial_command_service.h"
 
 static void print_sample(const sensor_sample_t *sample)
@@ -48,17 +49,25 @@ static alarm_state_t run_demo_samples(const alarm_config_t *config, sensor_sampl
         {260, 500u, 320u, 20u},
     };
     size_t index = 0;
-    size_t count = sizeof(samples) / sizeof(samples[0]);
+    sequence_sensor_source_t sequence;
+    sensor_source_t source;
+    sensor_sample_t sample = *last_sample;
 
-    for (index = 0; index < count; index++) {
+    if (!sequence_sensor_source_init(&sequence, samples, sizeof(samples) / sizeof(samples[0]), false)) {
+        return state;
+    }
+    source = sequence_sensor_source_as_source(&sequence);
+
+    while (sensor_source_read(&source, &sample)) {
         /* alarm_state_update 是纯逻辑函数，所以同一份代码可在主机和 MCU 上复用。 */
-        state = alarm_state_update(state, config, &samples[index]);
+        state = alarm_state_update(state, config, &sample);
         printf("demo[%lu] ", (unsigned long)index);
-        print_status(state, &samples[index]);
+        print_status(state, &sample);
+        index++;
     }
 
     /* 脚本命令 STATUS? 需要知道最近一次 sample，这里保存 demo 的最后一条。 */
-    *last_sample = samples[count - 1u];
+    *last_sample = sample;
     return state;
 }
 
