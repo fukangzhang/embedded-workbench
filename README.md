@@ -42,7 +42,7 @@
 - 传感器采样模型、传感器来源接口、序列模拟传感器来源、采集步骤桥接、环境处理步骤、环境配置安全更新、告警状态机、告警输出策略、闪烁节拍和数字输出抽象
 - 文本命令链路：串口行缓冲、串口命令服务、串口命令 ingress、串口命令 ingress pump、串口命令 pump、解析命令、处理配置、SAMPLE 样本注入、格式化响应、命令会话、脚本化 host_sim 输入
 - STM32 固件骨架：启动文件、freestanding libc、ELF/BIN/HEX 固件产物、真实 GPIO 初始化开关、USART2 初始化、命令 pump 自检和真实 USART2 命令 loop 开关
-- NUCLEO-F401RE bring-up 辅助：OpenOCD dry-run/烧录脚本、FreeRTOS USART2 I/O 固件构建脚本、ST-LINK/STM32F4 默认配置和板上验证记录入口
+- NUCLEO-F401RE bring-up 辅助：OpenOCD dry-run/烧录脚本、FreeRTOS USART2 I/O 固件构建脚本、ST-LINK VCP 验证脚本、ST-LINK/STM32F4 默认配置和板上验证记录入口
 - BSP/driver 边界：板级 profile、GPIO 寄存器配置、RCC GPIO/USART 时钟、USART 寄存器 helper、USART 串口 IO 适配器、STM32F401RE GPIO/USART2 地址绑定、板级 USART2 初始化
 - FreeRTOS 骨架：任务模型、RTOS port 接口、FreeRTOS task/queue 创建、命令 ingress hook、真实 USART2 command reader/response writer 开关、配置更新队列、scheduler 运行期 context、告警事件流和输出节拍接入
 - C 代码学习注释：关键 `.c/.h` 文件和测试都已经补充初学者导向注释
@@ -117,7 +117,8 @@
    - `docs/learning/2026-05-09-FreeRTOS真实USART2命令Reader.md`
    - `docs/learning/2026-05-09-FreeRTOS真实USART2响应Writer.md`
    - `docs/learning/2026-05-09-FreeRTOS真实USART2IO板上验证入口.md`
-   - 对应代码：`app/src/rtos_task_model.c`、`app/src/rtos_port*.c`、`app/src/serial_command_ingress*.c`、`app/src/command_responder.c`、`firmware/src/main.c`、`firmware/config/FreeRTOSConfig.h`、`scripts/build_freertos_usart2_io_firmware.ps1`
+   - `docs/learning/2026-05-09-FreeRTOS真实USART2VCP验证脚本.md`
+   - 对应代码：`app/src/rtos_task_model.c`、`app/src/rtos_port*.c`、`app/src/serial_command_ingress*.c`、`app/src/command_responder.c`、`firmware/src/main.c`、`firmware/config/FreeRTOSConfig.h`、`scripts/build_freertos_usart2_io_firmware.ps1`、`scripts/verify_freertos_usart2_vcp.ps1`
 
 7. 读 C 代码注释：
    - `docs/learning/2026-05-08-C代码注释阅读方法.md`
@@ -142,4 +143,4 @@
 
 ## 硬件 Bring-up
 
-真实板卡验证前，先看 `hardware/` 下的清单。目前入口是 `hardware/nucleo-f401re-bringup.md`，用于记录 NUCLEO-F401RE 的引脚依据、固件构建、FreeRTOS USART2 I/O 构建脚本、OpenOCD dry-run/烧录入口、烧录前检查和失败定位顺序。
+真实板卡验证前，先看 `hardware/` 下的清单。目前入口是 `hardware/nucleo-f401re-bringup.md`，用于记录 NUCLEO-F401RE 的引脚依据、固件构建、FreeRTOS USART2 I/O 构建脚本、OpenOCD dry-run/烧录入口、ST-LINK VCP 检查脚本、烧录前检查和失败定位顺序。
