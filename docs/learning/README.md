@@ -176,6 +176,7 @@
 - `2026-05-08-STM32板级GPIO输出初始化.md`
 - `2026-05-08-STM32F401REGPIO地址绑定.md`
 - `2026-05-09-STM32F401REUSART2绑定.md`
+- `2026-05-09-STM32板级USART2初始化.md`
 - `2026-05-08-固件真实STM32GPIO初始化开关.md`
 - `../../hardware/nucleo-f401re-bringup.md`
 - `2026-05-08-目标板工具链预研.md`
@@ -203,6 +204,8 @@
 - `drivers/src/stm32_usart.c`
 - `drivers/include/embedded_workbench/stm32_board_gpio_init.h`
 - `drivers/src/stm32_board_gpio_init.c`
+- `drivers/include/embedded_workbench/stm32_board_usart2_init.h`
+- `drivers/src/stm32_board_usart2_init.c`
 - `drivers/include/embedded_workbench/stm32f401re_gpio_bindings.h`
 - `drivers/src/stm32f401re_gpio_bindings.c`
 - `CMakeLists.txt`
@@ -222,6 +225,7 @@
 - `tests/test_stm32_rcc_usart_clock.c`
 - `tests/test_stm32_usart.c`
 - `tests/test_stm32_board_gpio_init.c`
+- `tests/test_stm32_board_usart2_init.c`
 - `tests/test_stm32f401re_gpio_bindings.c`
 
 看完要能解释：
@@ -237,6 +241,7 @@
 - `stm32_rcc_usart_clock` 为什么要单独打开 USART 外设时钟
 - `stm32_usart` 如何配置 BRR、8N1、RE/TE/UE，并轮询 RXNE/TXE
 - `stm32_board_gpio_init` 如何按 profile 串起 RCC 和 GPIO 配置
+- `stm32_board_usart2_init` 如何按板级顺序串起 GPIOA 时钟、PA2/PA3 AF7、USART2 时钟和 USART 8N1 配置
 - `stm32f401re_gpio_bindings` 为什么只提供地址绑定，不直接访问硬件
 - `stm32f401re_gpio_bindings` 如何同时保存 GPIO 和 USART2 的芯片/板级事实
 - `EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT` 为什么默认关闭，以及打开后证明了什么
