@@ -5,6 +5,8 @@
 #include "embedded_workbench/alarm_output.h"
 
 typedef struct {
+    /* response_writer_t 是低配版 snprintf builder。
+     * 项目目标包含裸机固件，所以这里不用 printf 家族拼接响应，减少 libc 依赖。 */
     char *buffer;
     size_t buffer_size;
     size_t used;
@@ -31,6 +33,8 @@ static void writer_append_char(response_writer_t *writer, char value)
         return;
     }
 
+    /* +1 是给字符串结尾的 '\0' 预留空间。
+     * 没有这个预留，串口发送或测试 strcmp 可能读过缓冲区边界。 */
     if (writer->used + 1u >= writer->buffer_size) {
         writer->ok = false;
         return;
@@ -44,6 +48,8 @@ static void writer_append_char(response_writer_t *writer, char value)
 static void writer_append_string(response_writer_t *writer, const char *text)
 {
     if (text == 0) {
+        /* 空指针表示调用者传入了不完整上下文。
+         * 这里直接失败，而不是把它格式化成 "(null)" 之类的主机特有行为。 */
         writer->ok = false;
         return;
     }
@@ -64,6 +70,7 @@ static void writer_append_u32(response_writer_t *writer, uint32_t value)
         return;
     }
 
+    /* uint32_t 最大十进制长度是 10 位，所以 digits[10] 足够。 */
     while (value > 0u && count < sizeof(digits)) {
         digits[count] = (char)('0' + (value % 10u));
         value /= 10u;
