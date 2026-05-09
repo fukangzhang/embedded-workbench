@@ -5,6 +5,9 @@
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/rtos_task_model.h"
 
+/* rtos_port_freertos 把项目自己的 rtos_port_t 接到 FreeRTOS。
+ * 这个文件是“真实 RTOS 后端”，负责创建队列、创建任务、在任务间转发消息。 */
+
 #define ALARM_OUTPUT_REFRESH_PERIOD_MS 50u
 
 typedef struct {

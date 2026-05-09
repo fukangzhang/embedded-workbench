@@ -8,18 +8,24 @@
 #include "embedded_workbench/sensor_sample.h"
 
 typedef struct {
+    /* 固定长度响应消息适合放进 RTOS queue，避免在任务之间传递堆内存。 */
     char text[128];
 } rtos_response_message_t;
 
 /* RTOS 端口抽象：主机测试可以替换成 fake，目标板可以接 FreeRTOS 队列。 */
 typedef struct {
+    /* start 在 FreeRTOS 后端里表示创建任务；是否启动调度器由更明确的 API 控制。 */
     bool (*start)(void *context);
+    /* 把新传感器样本送入 RTOS 数据流。 */
     bool (*send_sensor_sample)(void *context, const sensor_sample_t *sample);
+    /* 把已解析命令送入通信/命令处理数据流。 */
     bool (*send_command)(void *context, const command_t *command);
+    /* 从响应队列中取出一条响应。 */
     bool (*receive_response)(void *context, rtos_response_message_t *response);
 } rtos_port_ops_t;
 
 typedef struct {
+    /* ops 是函数表，context 是具体实现的私有状态；这是 C 里常用的接口写法。 */
     const rtos_port_ops_t *ops;
     void *context;
 } rtos_port_t;
