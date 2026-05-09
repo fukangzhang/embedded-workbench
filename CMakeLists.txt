@@ -79,6 +79,7 @@ add_library(embedded_app
     app/src/response_format.c
     app/src/sensor_acquisition.c
     app/src/serial_command_ingress.c
+    app/src/serial_command_ingress_pump.c
     app/src/serial_command_pump.c
     app/src/serial_command_service.c
     app/src/rtos_task_model.c
@@ -536,6 +537,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME serial_command_ingress COMMAND test_serial_command_ingress)
+
+    add_executable(test_serial_command_ingress_pump
+        tests/test_serial_command_ingress_pump.c
+    )
+
+    target_link_libraries(test_serial_command_ingress_pump
+        PRIVATE
+            embedded_app
+    )
+
+    add_test(NAME serial_command_ingress_pump COMMAND test_serial_command_ingress_pump)
 
     add_executable(test_serial_command_pump
         tests/test_serial_command_pump.c
