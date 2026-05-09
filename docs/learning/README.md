@@ -344,6 +344,7 @@
 - `2026-05-09-传感器采集步骤.md`
 - `2026-05-09-环境处理步骤.md`
 - `2026-05-09-命令响应步骤.md`
+- `2026-05-09-FreeRTOS命令IngressHook.md`
 - `2026-05-09-FreeRTOS配置更新队列.md`
 - `2026-05-08-FreeRTOS调度器显式启动入口.md`
 - `2026-05-09-FreeRTOS运行期Context接线.md`
@@ -365,6 +366,10 @@
 - `app/src/environment_processor.c`
 - `app/include/embedded_workbench/command_responder.h`
 - `app/src/command_responder.c`
+- `app/include/embedded_workbench/serial_command_ingress.h`
+- `app/src/serial_command_ingress.c`
+- `app/include/embedded_workbench/serial_command_ingress_pump.h`
+- `app/src/serial_command_ingress_pump.c`
 - `firmware/src/main.c`
 - `tests/test_command_responder.c`
 - `tests/test_rtos_task_model.c`
@@ -378,6 +383,7 @@
 - `env_process_task` 如何通过 `environment_processor` 把 sample 变成 alarm event
 - `environment_processor_update_config` 如何作为后续配置同步的安全落点
 - `communication_task` 如何通过 `command_responder` 把 command queue 里的命令变成 response queue 里的文本
+- `communication_task` 如何通过可选 reader hook 把串口字节入口接到 `command_queue`
 - `config_update_queue` 如何把 `SET` 命令产生的新配置快照同步给环境处理任务
 - `firmware/src/main.c` 如何在 scheduler 启动前准备模拟 `sensor_source` 和 `alarm_output_sink`
 - `xTaskCreate` 创建任务，但不等于调度器已经启动

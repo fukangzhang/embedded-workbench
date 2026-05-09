@@ -7,11 +7,14 @@
 #include "embedded_workbench/environment_processor.h"
 #include "embedded_workbench/rtos_task_model.h"
 #include "embedded_workbench/sensor_acquisition.h"
+#include "embedded_workbench/serial_command_ingress.h"
+#include "embedded_workbench/serial_command_ingress_pump.h"
 
 /* rtos_port_freertos 把项目自己的 rtos_port_t 接到 FreeRTOS。
  * 这个文件是“真实 RTOS 后端”，负责创建队列、创建任务、在任务间转发消息。 */
 
 #define ALARM_OUTPUT_REFRESH_PERIOD_MS 50u
+#define COMMAND_INGRESS_MAX_BYTES_PER_POLL 16u
 
 typedef struct {
     /* 目前输出任务只需要知道告警状态。
@@ -183,6 +186,17 @@ static bool freertos_submit_config_update(freertos_rtos_port_context_t *context,
     return xQueueSend(context->config_update_queue, config, (TickType_t)0) == pdPASS;
 }
 
+static bool freertos_submit_ingress_command(void *context, const command_t *command)
+{
+    freertos_rtos_port_context_t *freertos_context = (freertos_rtos_port_context_t *)context;
+
+    if (freertos_context == 0 || freertos_context->command_queue == 0 || command == 0) {
+        return false;
+    }
+
+    return xQueueSend(freertos_context->command_queue, command, (TickType_t)0) == pdPASS;
+}
+
 static void communication_task(void *parameter)
 {
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
@@ -194,18 +208,45 @@ static void communication_task(void *parameter)
     sensor_sample_t sample = sensor_sample_make(250, 500u, 300u, 20u);
     command_responder_t responder;
     bool responder_ready = false;
+    serial_command_ingress_t command_ingress;
+    bool ingress_ready = false;
+    char ingress_rx_buffer[96];
+    char ingress_line_buffer[96];
+    TickType_t command_receive_timeout = portMAX_DELAY;
 
     if (context != 0) {
         responder_ready = command_responder_init(&responder, &config, &state, &sample);
+        if (context->command_read != 0) {
+            ingress_ready = serial_command_ingress_init(
+                &command_ingress,
+                ingress_rx_buffer,
+                sizeof(ingress_rx_buffer),
+                ingress_line_buffer,
+                sizeof(ingress_line_buffer),
+                freertos_submit_ingress_command,
+                context);
+        }
     }
 
     for (;;) {
+        if (ingress_ready) {
+            (void)serial_command_ingress_pump_poll(
+                &command_ingress,
+                context->command_read,
+                context->command_read_context,
+                COMMAND_INGRESS_MAX_BYTES_PER_POLL,
+                0);
+            command_receive_timeout = ticks_for_descriptor(RTOS_TASK_COMMUNICATION);
+        } else {
+            command_receive_timeout = portMAX_DELAY;
+        }
+
         /* 通信任务处理已经解析好的 command_t，并把响应文本送回 response_queue。 */
         if (responder_ready &&
             context != 0 &&
             context->command_queue != 0 &&
             context->response_queue != 0 &&
-            xQueueReceive(context->command_queue, &command, portMAX_DELAY) == pdPASS) {
+            xQueueReceive(context->command_queue, &command, command_receive_timeout) == pdPASS) {
             if (command_responder_handle_command_with_status(
                     &responder,
                     &command,
