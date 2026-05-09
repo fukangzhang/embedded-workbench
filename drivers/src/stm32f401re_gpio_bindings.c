@@ -1,5 +1,8 @@
 #include "embedded_workbench/stm32f401re_gpio_bindings.h"
 
+/* 这个文件只绑定 STM32F401RE 的真实地址和端口表。
+ * 通用 STM32 驱动通过这些表工作，因此驱动本身不用写死某一颗芯片的地址。 */
+
 static const stm32_rcc_gpio_clock_port_t gpio_clock_ports[] = {
     /* AHB1ENR bit0 控制 GPIOA 时钟，bit1 控制 GPIOB 时钟。 */
     {"PA", 0u},

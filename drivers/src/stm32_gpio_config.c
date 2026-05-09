@@ -1,5 +1,8 @@
 #include "embedded_workbench/stm32_gpio_config.h"
 
+/* stm32_gpio_config 负责把 board_pin_t 配成 STM32 GPIO 输出模式。
+ * 它写的是 MODER/OTYPER/OSPEEDR/PUPDR 这类配置寄存器，不负责后续输出高低电平。 */
+
 #define STM32_GPIO_MODE_OUTPUT 1u
 #define STM32_GPIO_TWO_BIT_MASK 3u
 

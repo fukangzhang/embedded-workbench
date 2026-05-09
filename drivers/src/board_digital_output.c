@@ -1,5 +1,8 @@
 #include "embedded_workbench/board_digital_output.h"
 
+/* board_digital_output 是主机/测试用后端。
+ * 它按 board_profile 识别三个告警输出脚，把电平保存在内存里，不碰真实硬件。 */
+
 static bool text_equals(const char *left, const char *right)
 {
     if (left == 0 || right == 0) {

@@ -1,5 +1,8 @@
 #include "embedded_workbench/stm32_gpio_output.h"
 
+/* stm32_gpio_output 负责运行期写高/低电平。
+ * 它不配置 pin 模式，只通过 GPIOx_BSRR 对已经初始化好的输出脚进行原子置位/复位。 */
+
 static bool text_equals(const char *left, const char *right)
 {
     if (left == 0 || right == 0) {

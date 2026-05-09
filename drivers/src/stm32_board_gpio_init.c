@@ -1,5 +1,8 @@
 #include "embedded_workbench/stm32_board_gpio_init.h"
 
+/* stm32_board_gpio_init 是板级 GPIO 初始化编排层。
+ * 它把 board_profile 中的业务引脚，串到 RCC 时钟和 GPIO 配置两个底层驱动。 */
+
 static bool init_output_pin(
     const board_pin_t *pin,
     const stm32_rcc_gpio_clock_context_t *clock_context,
