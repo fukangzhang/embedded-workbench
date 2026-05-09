@@ -4,11 +4,16 @@
 #include "embedded_workbench/command_parser.h"
 #include "embedded_workbench/sensor_sample.h"
 
+/* rtos_task_model 是 RTOS 设计的“清单”。
+ * 它不创建真实 FreeRTOS 任务，只集中记录要创建哪些任务、队列参数是什么。 */
+
 typedef struct {
+    /* 告警事件当前只携带状态，后续可以扩展时间戳或样本摘要。 */
     alarm_state_t state;
 } alarm_event_t;
 
 typedef struct {
+    /* response queue 放固定大小消息，避免队列里传递动态内存指针。 */
     char text[128];
 } response_message_t;
 
@@ -46,6 +51,7 @@ const rtos_task_descriptor_t *rtos_task_model_find_task(rtos_task_id_t id)
 {
     size_t index = 0;
 
+    /* 用线性查找足够：任务数量很少，代码简单比过早优化更重要。 */
     for (index = 0; index < rtos_task_model_task_count(); index++) {
         if (tasks[index].id == id) {
             return &tasks[index];
@@ -73,6 +79,7 @@ const rtos_queue_descriptor_t *rtos_task_model_find_queue(rtos_queue_id_t id)
 {
     size_t index = 0;
 
+    /* 队列数量同样很少，保持直观线性查找即可。 */
     for (index = 0; index < rtos_task_model_queue_count(); index++) {
         if (queues[index].id == id) {
             return &queues[index];

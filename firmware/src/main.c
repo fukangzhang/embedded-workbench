@@ -11,6 +11,9 @@
 #include "embedded_workbench/sensor_sample.h"
 #include "embedded_workbench/stm32_board_gpio_init.h"
 
+/* firmware/main.c 当前不是最终产品逻辑，而是固件骨架自检入口。
+ * 它把 app/drivers/bsp/FreeRTOS 链路尽量串起来，证明目标固件能编译、链接并进入 main。 */
+
 #if defined(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT)
 #include "embedded_workbench/stm32f401re_gpio_bindings.h"
 #endif

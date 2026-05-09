@@ -1,5 +1,8 @@
 #include "embedded_workbench/rtos_port.h"
 
+/* rtos_port 是应用层和具体 RTOS 实现之间的窄接口。
+ * app 通过这里发 sample/command、收 response，测试则可以提供 fake ops。 */
+
 bool rtos_port_is_valid(const rtos_port_t *port)
 {
     return port != 0 &&
