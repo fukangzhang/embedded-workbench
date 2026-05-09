@@ -4,9 +4,7 @@
 #include "embedded_workbench/alarm_output.h"
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/app_info.h"
-#include "embedded_workbench/command_handler.h"
-#include "embedded_workbench/command_parser.h"
-#include "embedded_workbench/response_format.h"
+#include "embedded_workbench/command_session.h"
 #include "embedded_workbench/sensor_sample.h"
 
 static void print_sample(const sensor_sample_t *sample)
@@ -64,51 +62,15 @@ static void handle_script_command(
     alarm_state_t *state,
     const sensor_sample_t *sample)
 {
-    command_t command;
-    command_handler_result_t result;
-    char response[256];
+    command_session_t session;
+    char response[512];
 
-    if (!command_parse(line, &command)) {
-        result.result = COMMAND_RESULT_INVALID_COMMAND;
-        result.config_changed = false;
-        result.status_requested = false;
-        result.config_requested = false;
-        result.alarm_clear_requested = false;
-        if (response_format_result(response, sizeof(response), &result)) {
-            printf("%s", response);
-        }
-        return;
-    }
+    session.config = config;
+    session.state = state;
+    session.sample = sample;
 
-    result = command_handler_handle(&command, config);
-    if (response_format_result(response, sizeof(response), &result)) {
+    if (command_session_handle_line(&session, line, response, sizeof(response))) {
         printf("%s", response);
-    }
-
-    if (result.config_changed) {
-        *state = alarm_state_update(*state, config, sample);
-        if (response_format_config(response, sizeof(response), config)) {
-            printf("%s", response);
-        }
-        if (response_format_status(response, sizeof(response), *state, sample)) {
-            printf("%s", response);
-        }
-    }
-
-    if (result.status_requested) {
-        if (response_format_status(response, sizeof(response), *state, sample)) {
-            printf("%s", response);
-        }
-    }
-
-    if (result.config_requested) {
-        if (response_format_config(response, sizeof(response), config)) {
-            printf("%s", response);
-        }
-    }
-
-    if (result.alarm_clear_requested) {
-        printf("clear_alarm=requested\n");
     }
 }
 
