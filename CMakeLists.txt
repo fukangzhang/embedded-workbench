@@ -72,6 +72,7 @@ add_library(embedded_app
     app/src/alarm_output_timing.c
     app/src/app_info.c
     app/src/alarm_state.c
+    app/src/environment_processor.c
     app/src/command_handler.c
     app/src/command_session.c
     app/src/response_format.c
@@ -269,6 +270,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME sequence_sensor_source COMMAND test_sequence_sensor_source)
+
+    add_executable(test_environment_processor
+        tests/test_environment_processor.c
+    )
+
+    target_link_libraries(test_environment_processor
+        PRIVATE
+            embedded_app
+    )
+
+    add_test(NAME environment_processor COMMAND test_environment_processor)
 
     add_executable(test_alarm_state
         tests/test_alarm_state.c

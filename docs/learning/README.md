@@ -59,6 +59,7 @@
 - `2026-05-09-传感器来源接口.md`
 - `2026-05-09-序列传感器来源.md`
 - `2026-05-09-传感器采集步骤.md`
+- `2026-05-09-环境处理步骤.md`
 - `2026-05-08-告警状态机.md`
 - `2026-05-08-告警输出策略.md`
 - `2026-05-08-告警输出节拍逻辑.md`
@@ -76,6 +77,8 @@
 - `drivers/src/sequence_sensor_source.c`
 - `app/include/embedded_workbench/sensor_acquisition.h`
 - `app/src/sensor_acquisition.c`
+- `app/include/embedded_workbench/environment_processor.h`
+- `app/src/environment_processor.c`
 - `app/include/embedded_workbench/alarm_state.h`
 - `app/src/alarm_state.c`
 - `app/include/embedded_workbench/alarm_output.h`
@@ -92,6 +95,7 @@
 - `tests/test_sensor_source.c`
 - `tests/test_sequence_sensor_source.c`
 - `tests/test_sensor_acquisition.c`
+- `tests/test_environment_processor.c`
 - `tests/test_alarm_state.c`
 - `tests/test_alarm_output.c`
 - `tests/test_alarm_output_timing.c`
@@ -106,6 +110,7 @@
 - `sensor_source` 为什么只负责读取 sample，不负责判断告警
 - `sequence_sensor_source` 如何让 host_sim demo 通过统一 source 接口读取样本
 - `sensor_acquisition` 如何把 sample 来源接到后续提交管道
+- `environment_processor` 如何把 sample 转成告警状态事件
 - warning/alarm/recovery 这些阈值怎么影响状态切换
 - 为什么“告警状态”和“硬件输出策略”要分成两个模块
 - `period_ms` 如何变成 indicator 的亮灭节拍
@@ -323,6 +328,7 @@
 - `2026-05-08-FreeRTOS任务创建骨架.md`
 - `2026-05-09-传感器来源接口.md`
 - `2026-05-09-传感器采集步骤.md`
+- `2026-05-09-环境处理步骤.md`
 - `2026-05-08-FreeRTOS调度器显式启动入口.md`
 - `2026-05-08-FreeRTOS告警事件流骨架.md`
 - `2026-05-08-FreeRTOS告警输出节拍接入.md`
@@ -338,6 +344,8 @@
 - `app/src/rtos_port_freertos.c`
 - `app/include/embedded_workbench/sensor_acquisition.h`
 - `app/src/sensor_acquisition.c`
+- `app/include/embedded_workbench/environment_processor.h`
+- `app/src/environment_processor.c`
 - `firmware/src/main.c`
 
 看完要能解释：
@@ -346,6 +354,7 @@
 - `FreeRTOSConfig.h` 是项目侧配置，不是内核自带固定答案
 - queue 如何连接 task 之间的数据流
 - `sensor_acquire_task` 如何通过 `sensor_acquisition` 从可选 `sensor_source` 读取 sample 并发送到队列
+- `env_process_task` 如何通过 `environment_processor` 把 sample 变成 alarm event
 - `xTaskCreate` 创建任务，但不等于调度器已经启动
 - `vTaskStartScheduler` 为什么要通过显式开关控制
 - 告警输出 task 为什么是“事件更新状态 + 周期刷新 indicator”
@@ -382,6 +391,7 @@ sensor_sample
   -> sensor_source
   -> sequence_sensor_source
   -> sensor_acquisition
+  -> environment_processor
   -> alarm_state
   -> alarm_output
   -> alarm_output_timing
@@ -401,6 +411,7 @@ rtos_task_model
   -> rtos_port
   -> rtos_port_freertos
   -> sensor_acquisition
+  -> environment_processor
   -> sensor_source
   -> alarm_output_sink
   -> firmware/main.c
