@@ -172,9 +172,10 @@ if(EW_BUILD_TESTS)
         add_test(NAME host_sim_smoke COMMAND host_sim)
         add_test(
             NAME host_sim_script_status
-            COMMAND powershell -NoProfile -ExecutionPolicy Bypass -File
-                ${CMAKE_SOURCE_DIR}/tests/host_sim_script_smoke.ps1
-                $<TARGET_FILE:host_sim>
+            COMMAND ${CMAKE_COMMAND}
+                -D HOST_SIM_EXE=$<TARGET_FILE:host_sim>
+                -D HOST_SIM_INPUT=${CMAKE_SOURCE_DIR}/tests/host_sim_status_input.txt
+                -P ${CMAKE_SOURCE_DIR}/tests/host_sim_script_smoke.cmake
         )
     endif()
 
