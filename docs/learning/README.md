@@ -56,6 +56,7 @@
 先看：
 
 - `2026-05-08-传感器数据模型.md`
+- `2026-05-09-传感器来源接口.md`
 - `2026-05-08-告警状态机.md`
 - `2026-05-08-告警输出策略.md`
 - `2026-05-08-告警输出节拍逻辑.md`
@@ -67,6 +68,8 @@
 
 - `drivers/include/embedded_workbench/sensor_sample.h`
 - `drivers/src/sensor_sample.c`
+- `drivers/include/embedded_workbench/sensor_source.h`
+- `drivers/src/sensor_source.c`
 - `app/include/embedded_workbench/alarm_state.h`
 - `app/src/alarm_state.c`
 - `app/include/embedded_workbench/alarm_output.h`
@@ -80,6 +83,7 @@
 - `app/src/response_format.c`
 - `tools/host_sim/main.c`
 - `tests/test_sensor_sample.c`
+- `tests/test_sensor_source.c`
 - `tests/test_alarm_state.c`
 - `tests/test_alarm_output.c`
 - `tests/test_alarm_output_timing.c`
@@ -91,6 +95,7 @@
 
 - 一个传感器样本里有哪些字段
 - 为什么要校验传感器数据范围
+- `sensor_source` 为什么只负责读取 sample，不负责判断告警
 - warning/alarm/recovery 这些阈值怎么影响状态切换
 - 为什么“告警状态”和“硬件输出策略”要分成两个模块
 - `period_ms` 如何变成 indicator 的亮灭节拍
@@ -306,6 +311,7 @@
 - `2026-05-08-FreeRTOS内核接入预研.md`
 - `2026-05-08-FreeRTOS队列型RTOSPort骨架.md`
 - `2026-05-08-FreeRTOS任务创建骨架.md`
+- `2026-05-09-传感器来源接口.md`
 - `2026-05-08-FreeRTOS调度器显式启动入口.md`
 - `2026-05-08-FreeRTOS告警事件流骨架.md`
 - `2026-05-08-FreeRTOS告警输出节拍接入.md`
@@ -326,6 +332,7 @@
 - 为什么不把 FreeRTOS-Kernel 源码直接复制进仓库
 - `FreeRTOSConfig.h` 是项目侧配置，不是内核自带固定答案
 - queue 如何连接 task 之间的数据流
+- `sensor_acquire_task` 如何从可选 `sensor_source` 读取 sample 并发送到队列
 - `xTaskCreate` 创建任务，但不等于调度器已经启动
 - `vTaskStartScheduler` 为什么要通过显式开关控制
 - 告警输出 task 为什么是“事件更新状态 + 周期刷新 indicator”
@@ -359,6 +366,7 @@
 
 ```text
 sensor_sample
+  -> sensor_source
   -> alarm_state
   -> alarm_output
   -> alarm_output_timing
@@ -377,6 +385,7 @@ serial_line
 rtos_task_model
   -> rtos_port
   -> rtos_port_freertos
+  -> sensor_source
   -> alarm_output_sink
   -> firmware/main.c
 ```

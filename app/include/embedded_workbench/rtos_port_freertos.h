@@ -9,6 +9,7 @@
 
 #include "embedded_workbench/alarm_output_sink.h"
 #include "embedded_workbench/rtos_port.h"
+#include "embedded_workbench/sensor_source.h"
 
 typedef struct {
     /* FreeRTOS 的队列和任务句柄都集中放在 context 里。
@@ -21,6 +22,9 @@ typedef struct {
     /* 输出任务需要一个 sink，把“告警输出命令”真正落到 LED/蜂鸣器/执行器。
      * 这里存指针而不是直接存对象，是为了后续可以接真实 GPIO 后端或测试假后端。 */
     alarm_output_sink_t *alarm_output_sink;
+
+    /* 采集任务的输入来源。为空时任务只保留周期骨架；非空时读取 sample 并送入队列。 */
+    sensor_source_t *sensor_source;
 
     /* xTaskCreate 会把创建出来的任务句柄写到这些字段。
      * 后续判断任务是否已经创建、是否可以启动调度器，都靠这些字段。 */

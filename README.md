@@ -39,7 +39,7 @@
 到目前为止，仓库已经不是空骨架，已经具备下面这些可展示内容：
 
 - 主机侧 CMake 工程、主机仿真程序 `host_sim`、30 个主机测试和 GitHub CI
-- 传感器采样模型、告警状态机、告警输出策略、闪烁节拍和数字输出抽象
+- 传感器采样模型、传感器来源接口、告警状态机、告警输出策略、闪烁节拍和数字输出抽象
 - 文本命令链路：串口行缓冲、串口命令服务、串口命令 pump、解析命令、处理配置、SAMPLE 样本注入、格式化响应、命令会话、脚本化 host_sim 输入
 - STM32 固件骨架：启动文件、freestanding libc、ELF/BIN/HEX 固件产物、真实 GPIO 初始化开关、USART2 初始化、命令 pump 自检和真实 USART2 命令 loop 开关
 - NUCLEO-F401RE bring-up 辅助：OpenOCD dry-run/烧录脚本、ST-LINK/STM32F4 默认配置和板上验证记录入口
@@ -63,10 +63,11 @@
 
 3. 业务核心逻辑：
    - `docs/learning/2026-05-08-传感器数据模型.md`
+   - `docs/learning/2026-05-09-传感器来源接口.md`
    - `docs/learning/2026-05-08-告警状态机.md`
    - `docs/learning/2026-05-08-告警输出策略.md`
    - `docs/learning/2026-05-08-告警输出节拍逻辑.md`
-   - 对应代码：`drivers/include/embedded_workbench/sensor_sample.h`、`app/src/alarm_state.c`、`app/src/alarm_output*.c`
+   - 对应代码：`drivers/include/embedded_workbench/sensor_sample.h`、`drivers/include/embedded_workbench/sensor_source.h`、`app/src/alarm_state.c`、`app/src/alarm_output*.c`
 
 4. 串口命令链路：
    - `docs/learning/2026-05-08-串口行缓冲模块.md`
@@ -102,6 +103,7 @@
    - `docs/learning/2026-05-08-FreeRTOS任务模型.md`
    - `docs/learning/2026-05-08-FreeRTOS队列型RTOSPort骨架.md`
    - `docs/learning/2026-05-08-FreeRTOS告警事件流骨架.md`
+   - `docs/learning/2026-05-09-传感器来源接口.md`
    - 对应代码：`app/src/rtos_task_model.c`、`app/src/rtos_port*.c`、`firmware/config/FreeRTOSConfig.h`
 
 7. 读 C 代码注释：
@@ -120,7 +122,7 @@
 
 1. 真实 NUCLEO-F401RE bring-up：烧录固件、确认 GPIO 输出和失败定位流程
 2. UART 接入：把已完成的 USART2 RCC/GPIO AF7/地址绑定和板级初始化接入固件入口，然后把真实串口字节接到 `serial_command_service`
-3. 传感器驱动抽象：从手工 `SAMPLE` 注入走向模拟/真实传感器输入
+3. 传感器驱动抽象：从 `sensor_source` 接口走向模拟/真实传感器输入
 4. FreeRTOS 运行闭环：采集、处理、通信、输出任务之间跑通真实队列
 5. 协议扩展：在串口命令稳定后，再考虑 `Modbus`、`CAN` 或更完整的 telemetry
 6. 展示增强：需要作品集效果时，再增加 PC dashboard 或日志可视化
