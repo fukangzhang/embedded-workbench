@@ -59,6 +59,7 @@
 - `2026-05-09-传感器样本滤波.md`
 - `2026-05-09-传感器来源接口.md`
 - `2026-05-09-序列传感器来源.md`
+- `2026-05-09-滤波传感器来源.md`
 - `2026-05-09-传感器采集步骤.md`
 - `2026-05-09-环境处理步骤.md`
 - `2026-05-08-告警状态机.md`
@@ -78,6 +79,8 @@
 - `drivers/src/sensor_source.c`
 - `drivers/include/embedded_workbench/sequence_sensor_source.h`
 - `drivers/src/sequence_sensor_source.c`
+- `drivers/include/embedded_workbench/filtered_sensor_source.h`
+- `drivers/src/filtered_sensor_source.c`
 - `app/include/embedded_workbench/sensor_acquisition.h`
 - `app/src/sensor_acquisition.c`
 - `app/include/embedded_workbench/environment_processor.h`
@@ -98,6 +101,7 @@
 - `tests/test_sensor_sample_filter.c`
 - `tests/test_sensor_source.c`
 - `tests/test_sequence_sensor_source.c`
+- `tests/test_filtered_sensor_source.c`
 - `tests/test_sensor_acquisition.c`
 - `tests/test_environment_processor.c`
 - `tests/test_alarm_state.c`
@@ -114,6 +118,7 @@
 - `sensor_sample_filter` 如何用整数权重平滑样本，并且为什么当前还没接入运行链路
 - `sensor_source` 为什么只负责读取 sample，不负责判断告警
 - `sequence_sensor_source` 如何让 host_sim demo 通过统一 source 接口读取样本
+- `filtered_sensor_source` 如何在不改变上层接口的情况下给任意 source 加滤波
 - `sensor_acquisition` 如何把 sample 来源接到后续提交管道
 - `environment_processor` 如何把 sample 转成告警状态事件
 - `environment_processor_update_config` 为什么只接受完整合法配置
@@ -438,6 +443,7 @@
 sensor_sample
   -> sensor_source
   -> sequence_sensor_source
+  -> filtered_sensor_source
   -> sensor_acquisition
   -> environment_processor
   -> alarm_state
