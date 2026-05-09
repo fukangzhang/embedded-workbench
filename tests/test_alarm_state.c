@@ -29,7 +29,8 @@ int main(void)
     sensor_sample_t not_recovered_from_alarm = sensor_sample_make(360, 500u, 300u, 20u);
     sensor_sample_t invalid_sample = sensor_sample_make(SENSOR_TEMPERATURE_MAX_C_X10 + 1, 500u, 300u, 20u);
 
-    /* 这些用例覆盖状态机主路径：正常、warning、alarm、回滞保持、恢复和传感器故障。 */
+    /* 这些用例覆盖状态机主路径：正常、warning、alarm、回滞保持、恢复和传感器故障。
+     * 对初学者来说，这个文件是理解 alarm_state.c 的最好入口。 */
     if (expect_true(alarm_config_is_valid(&config)) != 0) {
         return 1;
     }
@@ -42,6 +43,7 @@ int main(void)
         return 3;
     }
 
+    /* 光照是“越低越危险”，dim 样本验证低光照也会触发 warning。 */
     if (expect_state(alarm_state_update(ALARM_STATE_NORMAL, &config, &dim), ALARM_STATE_WARNING) != 0) {
         return 4;
     }
@@ -50,6 +52,7 @@ int main(void)
         return 5;
     }
 
+    /* 回滞测试：已经 ALARM 时，只降到 warning 区间还不能退出 ALARM。 */
     if (expect_state(alarm_state_update(ALARM_STATE_ALARM, &config, &not_recovered_from_alarm), ALARM_STATE_ALARM) != 0) {
         return 6;
     }
@@ -67,6 +70,7 @@ int main(void)
         return 9;
     }
 
+    /* name 函数用于响应文本和日志，测试它能防止协议显示字符串意外变化。 */
     if (expect_string(alarm_state_name(ALARM_STATE_ALARM), "alarm") != 0) {
         return 10;
     }
