@@ -111,6 +111,7 @@
 - `sequence_sensor_source` 如何让 host_sim demo 通过统一 source 接口读取样本
 - `sensor_acquisition` 如何把 sample 来源接到后续提交管道
 - `environment_processor` 如何把 sample 转成告警状态事件
+- `environment_processor_update_config` 为什么只接受完整合法配置
 - warning/alarm/recovery 这些阈值怎么影响状态切换
 - 为什么“告警状态”和“硬件输出策略”要分成两个模块
 - `period_ms` 如何变成 indicator 的亮灭节拍
@@ -363,6 +364,7 @@
 - queue 如何连接 task 之间的数据流
 - `sensor_acquire_task` 如何通过 `sensor_acquisition` 从可选 `sensor_source` 读取 sample 并发送到队列
 - `env_process_task` 如何通过 `environment_processor` 把 sample 变成 alarm event
+- `environment_processor_update_config` 如何作为后续配置同步的安全落点
 - `communication_task` 如何通过 `command_responder` 把 command queue 里的命令变成 response queue 里的文本
 - `xTaskCreate` 创建任务，但不等于调度器已经启动
 - `vTaskStartScheduler` 为什么要通过显式开关控制

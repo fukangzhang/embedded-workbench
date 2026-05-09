@@ -52,6 +52,55 @@ static int expect_state(alarm_state_t actual, alarm_state_t expected)
     return actual == expected ? 0 : 1;
 }
 
+static int test_update_config_changes_next_processing_result(void)
+{
+    alarm_config_t config = alarm_config_default();
+    alarm_config_t updated_config = config;
+    alarm_config_t invalid_config = config;
+    sensor_sample_t sample = sensor_sample_make(340, 500u, 300u, 20u);
+    environment_processor_t processor;
+    fake_publish_context_t publish_context = {0u, ALARM_STATE_SENSOR_FAULT, false};
+
+    if (expect_true(environment_processor_init(
+            &processor,
+            &config,
+            ALARM_STATE_NORMAL,
+            fake_publish,
+            &publish_context)) != 0) {
+        return 1;
+    }
+
+    if (expect_true(environment_processor_process_sample(&processor, &sample)) != 0 ||
+        expect_state(publish_context.last_state, ALARM_STATE_NORMAL) != 0) {
+        return 2;
+    }
+
+    updated_config.temperature_warning_high_c_x10 = 330;
+    if (expect_true(environment_processor_update_config(&processor, &updated_config)) != 0 ||
+        expect_true(environment_processor_process_sample(&processor, &sample)) != 0 ||
+        expect_state(publish_context.last_state, ALARM_STATE_WARNING) != 0 ||
+        expect_state(environment_processor_current_state(&processor), ALARM_STATE_WARNING) != 0) {
+        return 3;
+    }
+
+    invalid_config.temperature_warning_high_c_x10 = 500;
+    invalid_config.temperature_alarm_high_c_x10 = 450;
+    sample = sensor_sample_make(460, 500u, 300u, 20u);
+
+    if (expect_false(environment_processor_update_config(&processor, &invalid_config)) != 0 ||
+        expect_true(environment_processor_process_sample(&processor, &sample)) != 0 ||
+        expect_state(publish_context.last_state, ALARM_STATE_ALARM) != 0) {
+        return 4;
+    }
+
+    if (expect_false(environment_processor_update_config(0, &config)) != 0 ||
+        expect_false(environment_processor_update_config(&processor, 0)) != 0) {
+        return 5;
+    }
+
+    return 0;
+}
+
 int main(void)
 {
     alarm_config_t config = alarm_config_default();
@@ -135,6 +184,10 @@ int main(void)
             0)) != 0 ||
         expect_true(environment_processor_process_sample(&processor, &normal_sample)) != 0) {
         return 9;
+    }
+
+    if (test_update_config_changes_next_processing_result() != 0) {
+        return 10;
     }
 
     return 0;

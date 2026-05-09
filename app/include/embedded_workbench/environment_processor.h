@@ -29,6 +29,10 @@ bool environment_processor_process_sample(
     environment_processor_t *processor,
     const sensor_sample_t *sample);
 
+bool environment_processor_update_config(
+    environment_processor_t *processor,
+    const alarm_config_t *config);
+
 alarm_state_t environment_processor_current_state(const environment_processor_t *processor);
 
 #endif
