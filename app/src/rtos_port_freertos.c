@@ -294,6 +294,9 @@ static void communication_task(void *parameter)
                 if (status.config_changed) {
                     (void)freertos_submit_config_update(context, responder.config);
                 }
+                if (status.sample_changed) {
+                    (void)freertos_submit_sensor_sample(context, responder.sample);
+                }
                 if (xQueueSend(context->response_queue, &response, (TickType_t)0) == pdPASS) {
                     freertos_drain_responses_to_writer(context);
                 }

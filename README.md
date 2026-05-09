@@ -116,6 +116,7 @@
    - `docs/learning/2026-05-09-FreeRTOS命令IngressHook.md`
    - `docs/learning/2026-05-09-FreeRTOS真实USART2命令Reader.md`
    - `docs/learning/2026-05-09-FreeRTOS真实USART2响应Writer.md`
+   - `docs/learning/2026-05-09-FreeRTOSSAMPLE命令转发.md`
    - `docs/learning/2026-05-09-FreeRTOS真实USART2IO板上验证入口.md`
    - `docs/learning/2026-05-09-FreeRTOS真实USART2VCP验证脚本.md`
    - 对应代码：`app/src/rtos_task_model.c`、`app/src/rtos_port*.c`、`app/src/serial_command_ingress*.c`、`app/src/command_responder.c`、`firmware/src/main.c`、`firmware/config/FreeRTOSConfig.h`、`scripts/build_freertos_usart2_io_firmware.ps1`、`scripts/verify_freertos_usart2_vcp.ps1`
