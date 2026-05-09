@@ -147,6 +147,43 @@ build-fw-real-usart2-command/embedded_firmware.elf
 .\scripts\flash_nucleo_f401re_openocd.ps1 -ImagePath build-fw-scheduler-real-usart2-io\embedded_firmware.elf
 ```
 
+## ST-LINK VCP 串口验证入口
+
+烧录 FreeRTOS 真实 USART2 I/O 固件后，先查看 Windows 识别到的串口：
+
+```powershell
+.\scripts\verify_freertos_usart2_vcp.ps1 -ListPorts
+```
+
+只看验证脚本会发送哪些命令，不打开串口：
+
+```powershell
+.\scripts\verify_freertos_usart2_vcp.ps1 -DryRun
+```
+
+假设 ST-LINK VCP 是 `COM5`，真实检查命令为：
+
+```powershell
+.\scripts\verify_freertos_usart2_vcp.ps1 -Port COM5
+```
+
+如果要保留串口响应记录：
+
+```powershell
+.\scripts\verify_freertos_usart2_vcp.ps1 `
+  -Port COM5 `
+  -LogPath hardware\logs\freertos-usart2-vcp-2026-05-09.txt
+```
+
+脚本默认发送：
+
+```text
+STATUS?
+CONFIG?
+SAMPLE 360 600 250 20
+STATUS?
+```
+
 如果 `openocd` 不在 PATH 中，可以显式传入可执行文件路径：
 
 ```powershell
