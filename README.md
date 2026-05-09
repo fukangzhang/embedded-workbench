@@ -80,6 +80,7 @@
    - `docs/learning/2026-05-08-BSP目标板Profile.md`
    - `docs/learning/2026-05-08-STM32GPIO初始化配置.md`
    - `docs/learning/2026-05-08-STM32GPIO输出后端.md`
+   - `docs/learning/2026-05-09-STM32GPIOAlternateFunction.md`
    - `docs/learning/2026-05-09-STM32USART寄存器Helper.md`
    - 对应代码：`bsp/`、`drivers/src/stm32_*.c`、`firmware/src/main.c`
 
