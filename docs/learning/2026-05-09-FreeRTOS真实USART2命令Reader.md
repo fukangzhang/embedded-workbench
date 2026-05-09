@@ -44,7 +44,7 @@ EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP
 
 是裸机轮询命令 loop，用 `serial_command_service` 同步读命令并写响应。
 
-新的：
+Reader 对应的是：
 
 ```text
 EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER
@@ -52,7 +52,15 @@ EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER
 
 只负责 FreeRTOS 输入侧，把 USART2 字节送进 `command_queue`。它不负责把 `response_queue` 写回 USART2。
 
-两个路径用途不同，所以用不同开关更清楚。
+Writer 对应的是：
+
+```text
+EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_RESPONSE_WRITER
+```
+
+只负责 FreeRTOS 输出侧，把 `response_queue` 文本写回 USART2。
+
+输入和输出可以分开验证，所以用不同开关更清楚。
 
 ## 为什么要用独立 serial I/O context？
 
@@ -85,21 +93,21 @@ EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER=ON
 
 它仍然不证明板上串口已经收到了字节。
 
-## 还缺什么？
+## 后续补齐了什么？
 
-当前只完成输入端 reader：
-
-```text
-USART2 -> command_queue
-```
-
-还缺输出端 writer：
+后续已经补了输出端 writer 开关：
 
 ```text
 response_queue -> USART2
 ```
 
-完成 writer 后，才更接近真实 FreeRTOS 串口命令闭环。最后仍需要板上启动 scheduler 并用 ST-LINK VCP 观察输入输出。
+reader + writer 都打开后，构建层面已经覆盖：
+
+```text
+USART2 -> command_queue -> response_queue -> USART2
+```
+
+最后仍需要板上启动 scheduler 并用 ST-LINK VCP 观察真实输入输出。
 
 ## 看完要能解释什么？
 

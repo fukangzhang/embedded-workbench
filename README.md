@@ -44,7 +44,7 @@
 - STM32 固件骨架：启动文件、freestanding libc、ELF/BIN/HEX 固件产物、真实 GPIO 初始化开关、USART2 初始化、命令 pump 自检和真实 USART2 命令 loop 开关
 - NUCLEO-F401RE bring-up 辅助：OpenOCD dry-run/烧录脚本、ST-LINK/STM32F4 默认配置和板上验证记录入口
 - BSP/driver 边界：板级 profile、GPIO 寄存器配置、RCC GPIO/USART 时钟、USART 寄存器 helper、USART 串口 IO 适配器、STM32F401RE GPIO/USART2 地址绑定、板级 USART2 初始化
-- FreeRTOS 骨架：任务模型、RTOS port 接口、FreeRTOS task/queue 创建、命令 ingress hook、真实 USART2 command reader 开关、配置更新队列、scheduler 运行期 context、告警事件流和输出节拍接入
+- FreeRTOS 骨架：任务模型、RTOS port 接口、FreeRTOS task/queue 创建、命令 ingress hook、真实 USART2 command reader/response writer 开关、配置更新队列、scheduler 运行期 context、告警事件流和输出节拍接入
 - C 代码学习注释：关键 `.c/.h` 文件和测试都已经补充初学者导向注释
 
 ## 学习路线
@@ -115,6 +115,7 @@
    - `docs/learning/2026-05-09-FreeRTOS运行期Context接线.md`
    - `docs/learning/2026-05-09-FreeRTOS命令IngressHook.md`
    - `docs/learning/2026-05-09-FreeRTOS真实USART2命令Reader.md`
+   - `docs/learning/2026-05-09-FreeRTOS真实USART2响应Writer.md`
    - 对应代码：`app/src/rtos_task_model.c`、`app/src/rtos_port*.c`、`app/src/serial_command_ingress*.c`、`app/src/command_responder.c`、`firmware/src/main.c`、`firmware/config/FreeRTOSConfig.h`
 
 7. 读 C 代码注释：

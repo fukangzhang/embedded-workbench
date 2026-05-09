@@ -346,6 +346,7 @@
 - `2026-05-09-命令响应步骤.md`
 - `2026-05-09-FreeRTOS命令IngressHook.md`
 - `2026-05-09-FreeRTOS真实USART2命令Reader.md`
+- `2026-05-09-FreeRTOS真实USART2响应Writer.md`
 - `2026-05-09-FreeRTOS配置更新队列.md`
 - `2026-05-08-FreeRTOS调度器显式启动入口.md`
 - `2026-05-09-FreeRTOS运行期Context接线.md`
@@ -386,6 +387,7 @@
 - `communication_task` 如何通过 `command_responder` 把 command queue 里的命令变成 response queue 里的文本
 - `communication_task` 如何通过可选 reader hook 把串口字节入口接到 `command_queue`
 - FreeRTOS 固件路径如何通过默认关闭开关把真实 USART2 reader 绑定到 command ingress hook
+- `communication_task` 如何通过可选 writer hook 把 `response_queue` 文本写回 USART2
 - `config_update_queue` 如何把 `SET` 命令产生的新配置快照同步给环境处理任务
 - `firmware/src/main.c` 如何在 scheduler 启动前准备模拟 `sensor_source` 和 `alarm_output_sink`
 - `xTaskCreate` 创建任务，但不等于调度器已经启动
