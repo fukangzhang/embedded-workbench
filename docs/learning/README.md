@@ -338,6 +338,7 @@
 - `2026-05-09-命令响应步骤.md`
 - `2026-05-09-FreeRTOS配置更新队列.md`
 - `2026-05-08-FreeRTOS调度器显式启动入口.md`
+- `2026-05-09-FreeRTOS运行期Context接线.md`
 - `2026-05-08-FreeRTOS告警事件流骨架.md`
 - `2026-05-08-FreeRTOS告警输出节拍接入.md`
 
@@ -370,6 +371,7 @@
 - `environment_processor_update_config` 如何作为后续配置同步的安全落点
 - `communication_task` 如何通过 `command_responder` 把 command queue 里的命令变成 response queue 里的文本
 - `config_update_queue` 如何把 `SET` 命令产生的新配置快照同步给环境处理任务
+- `firmware/src/main.c` 如何在 scheduler 启动前准备模拟 `sensor_source` 和 `alarm_output_sink`
 - `xTaskCreate` 创建任务，但不等于调度器已经启动
 - `vTaskStartScheduler` 为什么要通过显式开关控制
 - 告警输出 task 为什么是“事件更新状态 + 周期刷新 indicator”
