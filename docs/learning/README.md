@@ -169,6 +169,7 @@
 - `2026-05-08-板级数字输出后端.md`
 - `2026-05-08-STM32GPIO输出后端.md`
 - `2026-05-08-STM32GPIO初始化配置.md`
+- `2026-05-09-STM32GPIOAlternateFunction.md`
 - `2026-05-08-STM32RCCGPIO时钟使能.md`
 - `2026-05-09-STM32USART寄存器Helper.md`
 - `2026-05-08-STM32板级GPIO输出初始化.md`
@@ -226,6 +227,7 @@
 - `board_digital_output` 为什么只是 profile-backed 后端，还不是 STM32 GPIO 实现
 - `stm32_gpio_output` 如何把 high/low 转成 STM32 `BSRR` 写入
 - `stm32_gpio_config` 如何配置 `MODER/OTYPER/OSPEEDR/PUPDR`
+- `stm32_gpio_config` 如何通过 `AFRL/AFRH` 把 PA2/PA3 这类引脚切到 alternate function
 - `stm32_rcc_gpio_clock` 为什么要先打开 GPIO 端口时钟
 - `stm32_usart` 如何配置 BRR、8N1、RE/TE/UE，并轮询 RXNE/TXE
 - `stm32_board_gpio_init` 如何按 profile 串起 RCC 和 GPIO 配置

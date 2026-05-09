@@ -4,7 +4,9 @@
  * 它写的是 MODER/OTYPER/OSPEEDR/PUPDR 这类配置寄存器，不负责后续输出高低电平。 */
 
 #define STM32_GPIO_MODE_OUTPUT 1u
+#define STM32_GPIO_MODE_ALTERNATE_FUNCTION 2u
 #define STM32_GPIO_TWO_BIT_MASK 3u
+#define STM32_GPIO_FOUR_BIT_MASK 15u
 
 static bool text_equals(const char *left, const char *right)
 {
@@ -47,6 +49,15 @@ static bool pull_is_valid(stm32_gpio_pull_t pull)
 static bool config_is_valid(const stm32_gpio_output_config_t *config)
 {
     return config != 0 &&
+           output_type_is_valid(config->output_type) &&
+           speed_is_valid(config->speed) &&
+           pull_is_valid(config->pull);
+}
+
+static bool alternate_config_is_valid(const stm32_gpio_alternate_config_t *config)
+{
+    return config != 0 &&
+           config->alternate_function <= 15u &&
            output_type_is_valid(config->output_type) &&
            speed_is_valid(config->speed) &&
            pull_is_valid(config->pull);
@@ -102,10 +113,34 @@ static void write_one_bit_field(
     }
 }
 
+static void write_four_bit_field(
+    volatile uint32_t *register_value,
+    unsigned int field,
+    uint32_t value)
+{
+    uint32_t shift = field * 4u;
+    uint32_t mask = STM32_GPIO_FOUR_BIT_MASK << shift;
+
+    /* AFRL/AFRH 每个 pin 占 4 bit，用来选择 AF0..AF15。 */
+    *register_value = (*register_value & ~mask) | ((value & STM32_GPIO_FOUR_BIT_MASK) << shift);
+}
+
 stm32_gpio_output_config_t stm32_gpio_output_config_default(void)
 {
     stm32_gpio_output_config_t config;
 
+    config.output_type = STM32_GPIO_OUTPUT_PUSH_PULL;
+    config.speed = STM32_GPIO_SPEED_LOW;
+    config.pull = STM32_GPIO_PULL_NONE;
+
+    return config;
+}
+
+stm32_gpio_alternate_config_t stm32_gpio_alternate_config_default(uint8_t alternate_function)
+{
+    stm32_gpio_alternate_config_t config;
+
+    config.alternate_function = alternate_function;
     config.output_type = STM32_GPIO_OUTPUT_PUSH_PULL;
     config.speed = STM32_GPIO_SPEED_LOW;
     config.pull = STM32_GPIO_PULL_NONE;
@@ -153,6 +188,40 @@ bool stm32_gpio_configure_output(
         config->output_type == STM32_GPIO_OUTPUT_OPEN_DRAIN);
     write_two_bit_field(&registers->ospeedr, pin->pin, (uint32_t)config->speed);
     write_two_bit_field(&registers->pupdr, pin->pin, (uint32_t)config->pull);
+
+    return true;
+}
+
+bool stm32_gpio_configure_alternate_function(
+    const stm32_gpio_config_context_t *context,
+    const board_pin_t *pin,
+    const stm32_gpio_alternate_config_t *config)
+{
+    stm32_gpio_registers_t *registers = 0;
+
+    if (pin == 0 || pin->port == 0 || pin->pin > 15u || !alternate_config_is_valid(config)) {
+        return false;
+    }
+
+    registers = find_registers(context, pin->port);
+    if (registers == 0) {
+        return false;
+    }
+
+    /* alternate function 模式仍然要配置 MODER/OTYPER/OSPEEDR/PUPDR，
+     * 额外把 AF 编号写入 AFRL(pin0..7) 或 AFRH(pin8..15)。 */
+    write_two_bit_field(&registers->moder, pin->pin, STM32_GPIO_MODE_ALTERNATE_FUNCTION);
+    write_one_bit_field(
+        &registers->otyper,
+        pin->pin,
+        config->output_type == STM32_GPIO_OUTPUT_OPEN_DRAIN);
+    write_two_bit_field(&registers->ospeedr, pin->pin, (uint32_t)config->speed);
+    write_two_bit_field(&registers->pupdr, pin->pin, (uint32_t)config->pull);
+    if (pin->pin < 8u) {
+        write_four_bit_field(&registers->afrl, pin->pin, config->alternate_function);
+    } else {
+        write_four_bit_field(&registers->afrh, pin->pin - 8u, config->alternate_function);
+    }
 
     return true;
 }

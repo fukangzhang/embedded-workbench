@@ -14,6 +14,12 @@ typedef struct {
     volatile uint32_t otyper;
     volatile uint32_t ospeedr;
     volatile uint32_t pupdr;
+    volatile uint32_t idr;
+    volatile uint32_t odr;
+    volatile uint32_t bsrr;
+    volatile uint32_t lckr;
+    volatile uint32_t afrl;
+    volatile uint32_t afrh;
 } stm32_gpio_registers_t;
 
 typedef enum {
@@ -46,6 +52,15 @@ typedef struct {
 } stm32_gpio_output_config_t;
 
 typedef struct {
+    /* alternate_function 写入 AFRL/AFRH，STM32F401 的 USART2 TX/RX 使用 AF7。 */
+    uint8_t alternate_function;
+    /* alternate function pin 也需要配置输出类型、速度和上下拉。 */
+    stm32_gpio_output_type_t output_type;
+    stm32_gpio_speed_t speed;
+    stm32_gpio_pull_t pull;
+} stm32_gpio_alternate_config_t;
+
+typedef struct {
     /* port 是 "PA"/"PB" 这类板级名字，registers 指向该 GPIO 端口的寄存器组。
      * 在测试里它可以指向模拟结构体；在真实固件里它会指向芯片手册给出的固定地址。 */
     const char *port;
@@ -60,6 +75,7 @@ typedef struct {
 
 /* 默认输出配置采用保守安全值：推挽、低速、无上下拉。 */
 stm32_gpio_output_config_t stm32_gpio_output_config_default(void);
+stm32_gpio_alternate_config_t stm32_gpio_alternate_config_default(uint8_t alternate_function);
 bool stm32_gpio_config_init(
     stm32_gpio_config_context_t *context,
     const stm32_gpio_config_port_t *ports,
@@ -68,5 +84,9 @@ bool stm32_gpio_configure_output(
     const stm32_gpio_config_context_t *context,
     const board_pin_t *pin,
     const stm32_gpio_output_config_t *config);
+bool stm32_gpio_configure_alternate_function(
+    const stm32_gpio_config_context_t *context,
+    const board_pin_t *pin,
+    const stm32_gpio_alternate_config_t *config);
 
 #endif
