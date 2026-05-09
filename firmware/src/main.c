@@ -8,9 +8,11 @@
 #include "embedded_workbench/response_format.h"
 #include "embedded_workbench/rtos_port.h"
 #include "embedded_workbench/rtos_task_model.h"
+#include "embedded_workbench/serial_command_service.h"
 #include "embedded_workbench/sensor_sample.h"
 #include "embedded_workbench/stm32_board_gpio_init.h"
 #include "embedded_workbench/stm32_board_usart2_init.h"
+#include "embedded_workbench/stm32_usart_serial_io.h"
 #include "embedded_workbench/stm32f401re_gpio_bindings.h"
 
 /* firmware/main.c 当前不是最终产品逻辑，而是固件骨架自检入口。
@@ -30,6 +32,7 @@ static board_digital_output_context_t firmware_board_output_context = {0};
 static digital_output_controller_t firmware_digital_output = {0};
 static alarm_output_digital_sink_context_t firmware_alarm_output_digital_context = {0};
 static alarm_output_sink_t firmware_alarm_output_sink = {0};
+static stm32_usart_serial_io_context_t firmware_usart2_serial_io = {0};
 
 /* 下面这组不是 STM32 真实地址，而是固件自检用的模拟寄存器。
  * 真实地址绑定在 stm32f401re_gpio_bindings 模块里，当前 main 仍然保持可构建、可链接的安全自检。 */
@@ -217,6 +220,60 @@ static bool firmware_stm32_usart2_init_self_check(void)
                ((1u << 13u) | (1u << 3u) | (1u << 2u));
 }
 
+static bool firmware_usart2_command_service_self_check(void)
+{
+    serial_command_service_t service;
+    alarm_config_t config = alarm_config_default();
+    alarm_state_t state = ALARM_STATE_WARNING;
+    sensor_sample_t sample = sensor_sample_make(360, 600u, 250u, 20u);
+    char rx_buffer[64];
+    char line_buffer[64];
+    char response_buffer[256];
+    const char command_text[] = "STATUS?\n";
+    size_t index = 0u;
+    serial_command_service_status_t status = SERIAL_COMMAND_SERVICE_STATUS_IDLE;
+
+    /* 这一段把 USART2 I/O 适配器接到串口命令服务：
+     * command byte -> serial_command_service -> response text -> stm32_usart_serial_io_write。
+     * 仍然写模拟 USART2 寄存器，所以它验证调用链，不验证真实 USB-UART 输出。 */
+    firmware_usart2_registers.sr = 1u << 7u;
+    firmware_usart2_registers.dr = 0u;
+
+    if (!stm32_usart_serial_io_init(
+            &firmware_usart2_serial_io,
+            &firmware_usart2_registers,
+            STM32_USART_SERIAL_IO_DEFAULT_MAX_POLL_ATTEMPTS) ||
+        !serial_command_service_init(
+            &service,
+            rx_buffer,
+            sizeof(rx_buffer),
+            line_buffer,
+            sizeof(line_buffer),
+            response_buffer,
+            sizeof(response_buffer),
+            &config,
+            &state,
+            &sample,
+            stm32_usart_serial_io_write,
+            &firmware_usart2_serial_io)) {
+        return false;
+    }
+
+    while (command_text[index] != '\0') {
+        status = serial_command_service_feed(&service, command_text[index]);
+        if (status == SERIAL_COMMAND_SERVICE_STATUS_ERROR ||
+            status == SERIAL_COMMAND_SERVICE_STATUS_OVERFLOW) {
+            return false;
+        }
+        index++;
+    }
+
+    return status == SERIAL_COMMAND_SERVICE_STATUS_RESPONSE_SENT &&
+           response_buffer[0] == 'O' &&
+           response_buffer[1] == 'K' &&
+           firmware_usart2_registers.dr == (uint32_t)'\n';
+}
+
 #if defined(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT)
 static bool firmware_stm32f401re_real_gpio_init(void)
 {
@@ -298,6 +355,7 @@ int main(void)
         firmware_alarm_output_self_check() &&
         firmware_stm32_gpio_init_self_check() &&
         firmware_stm32_usart2_init_self_check() &&
+        firmware_usart2_command_service_self_check() &&
         freertos_ready &&
         real_gpio_ready) {
         firmware_self_check = 1;
