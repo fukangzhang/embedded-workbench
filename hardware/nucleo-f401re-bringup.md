@@ -184,6 +184,22 @@ SAMPLE 360 600 250 20
 STATUS?
 ```
 
+脚本默认还会检查 transcript 是否包含：
+
+```text
+OK result=ok
+CONFIG temp_warn=
+STATUS state=warning
+```
+
+如果只是想保存串口原始响应，不做默认期望检查，可以加：
+
+```powershell
+.\scripts\verify_freertos_usart2_vcp.ps1 -Port COM5 -NoExpect
+```
+
+如果本次验证目标不同，可以用 `-Expect` 传入自定义期望片段。
+
 如果 `openocd` 不在 PATH 中，可以显式传入可执行文件路径：
 
 ```powershell
