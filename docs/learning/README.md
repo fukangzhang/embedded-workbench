@@ -128,6 +128,7 @@
 - `2026-05-08-命令会话模块.md`
 - `2026-05-09-串口命令服务.md`
 - `2026-05-09-串口命令Ingress.md`
+- `2026-05-09-串口命令IngressPump.md`
 - `2026-05-09-串口命令Pump.md`
 - `2026-05-09-SAMPLE命令.md`
 - `2026-05-09-命令响应步骤.md`
@@ -147,6 +148,8 @@
 - `app/src/serial_command_service.c`
 - `app/include/embedded_workbench/serial_command_ingress.h`
 - `app/src/serial_command_ingress.c`
+- `app/include/embedded_workbench/serial_command_ingress_pump.h`
+- `app/src/serial_command_ingress_pump.c`
 - `app/include/embedded_workbench/serial_command_pump.h`
 - `app/src/serial_command_pump.c`
 - `app/include/embedded_workbench/command_handler.h`
@@ -170,6 +173,7 @@
 - 完整命令行如何被统一处理成一段响应文本
 - 串口命令服务如何把逐字节输入、行缓冲、命令会话和 writer callback 接起来
 - 串口命令 ingress 如何把逐字节输入解析成 `command_t` 并交给后续队列入口
+- 串口命令 ingress pump 如何有界读取字节并在提交一条命令后停下
 - 串口命令 pump 如何从 reader callback 有界读取字节并喂给命令服务
 - `SAMPLE` 命令如何在没有真实传感器时注入一帧样本并触发状态重算
 - `command_responder` 如何把已解析命令转成完整响应文本
@@ -424,6 +428,7 @@ sensor_sample
 serial_line
   -> serial_command_service
   -> serial_command_ingress
+  -> serial_command_ingress_pump
   -> command_session
   -> command_parser
   -> command_handler
