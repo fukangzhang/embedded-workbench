@@ -49,12 +49,36 @@ STATUS?
 .\scripts\verify_freertos_usart2_vcp.ps1 -Port COM5
 ```
 
+默认情况下，脚本会在所有串口响应里检查这些关键片段：
+
+```text
+OK result=ok
+CONFIG temp_warn=
+STATUS state=warning
+```
+
+这不是完整协议解析，只是一个轻量检查，用来避免“串口有输出但内容明显不对”也被误记成通过。
+
 保存响应记录：
 
 ```powershell
 .\scripts\verify_freertos_usart2_vcp.ps1 `
   -Port COM5 `
   -LogPath hardware\logs\freertos-usart2-vcp-2026-05-09.txt
+```
+
+如果只是想收集 transcript，不做默认期望检查：
+
+```powershell
+.\scripts\verify_freertos_usart2_vcp.ps1 -Port COM5 -NoExpect
+```
+
+如果本次命令序列不同，可以传入自己的期望片段：
+
+```powershell
+.\scripts\verify_freertos_usart2_vcp.ps1 `
+  -Port COM5 `
+  -Expect "OK result=ok","STATUS state=alarm"
 ```
 
 ## 运行前必须确认什么？

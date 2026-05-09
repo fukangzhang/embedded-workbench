@@ -8,8 +8,14 @@ param(
         "SAMPLE 360 600 250 20",
         "STATUS?"
     ),
+    [string[]]$Expect = @(
+        "OK result=ok",
+        "CONFIG temp_warn=",
+        "STATUS state=warning"
+    ),
     [string]$LogPath = "",
     [switch]$ListPorts,
+    [switch]$NoExpect,
     [switch]$DryRun
 )
 
@@ -68,6 +74,12 @@ if ($DryRun) {
     Write-Host "[vcp] Read timeout per command: ${ReadTimeoutMs}ms"
     Write-Host "[vcp] Commands:"
     $Commands | ForEach-Object { Write-Host "[vcp]   $_" }
+    if ($NoExpect) {
+        Write-Host "[vcp] Expectations: disabled"
+    } else {
+        Write-Host "[vcp] Expected response snippets:"
+        $Expect | ForEach-Object { Write-Host "[vcp]   $_" }
+    }
     Write-Host "[vcp] Example real run:"
     Write-Host ".\scripts\verify_freertos_usart2_vcp.ps1 -Port $DisplayPort"
     exit 0
@@ -83,6 +95,8 @@ $Serial.ReadTimeout = $ReadTimeoutMs
 $Serial.WriteTimeout = $ReadTimeoutMs
 
 $Transcript = [System.Collections.Generic.List[string]]::new()
+$AllResponseText = New-Object System.Text.StringBuilder
+$ExpectationFailed = $false
 
 try {
     $Serial.Open()
@@ -101,10 +115,23 @@ try {
             Write-TranscriptLine $Transcript "[vcp] <<< <no response within ${ReadTimeoutMs}ms>"
         } else {
             $Normalized = $Response -replace "`r", ""
+            [void]$AllResponseText.Append($Normalized)
             foreach ($Line in ($Normalized -split "`n")) {
                 if ($Line.Length -gt 0) {
                     Write-TranscriptLine $Transcript "[vcp] <<< $Line"
                 }
+            }
+        }
+    }
+
+    if (-not $NoExpect) {
+        $AllResponses = $AllResponseText.ToString()
+        foreach ($Expected in $Expect) {
+            if ($AllResponses.Contains($Expected)) {
+                Write-TranscriptLine $Transcript "[vcp] EXPECT ok: $Expected"
+            } else {
+                Write-TranscriptLine $Transcript "[vcp] EXPECT missing: $Expected"
+                $ExpectationFailed = $true
             }
         }
     }
@@ -121,4 +148,8 @@ if ($LogPath.Length -gt 0) {
     }
     Set-Content -Path $LogPath -Value $Transcript -Encoding UTF8
     Write-Host "[vcp] Transcript written: $LogPath"
+}
+
+if ($ExpectationFailed) {
+    throw "VCP response expectations failed. Check the transcript for missing expected text."
 }
