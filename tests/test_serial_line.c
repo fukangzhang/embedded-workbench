@@ -29,6 +29,7 @@ static int feed_text(serial_line_reader_t *reader, const char *text)
     size_t length = 0u;
     serial_line_status_t status = SERIAL_LINE_STATUS_IDLE;
 
+    /* helper 用逐字节方式喂入文本，模拟串口 ISR/轮询一次只收到一个 byte 的情况。 */
     while (*cursor != '\0') {
         status = serial_line_feed(reader, *cursor, line, sizeof(line), &length);
         if (status == SERIAL_LINE_STATUS_OVERFLOW) {
@@ -51,6 +52,7 @@ static int test_complete_line_on_lf(void)
         return 1;
     }
 
+    /* LF 结束一行：前面的字节被复制到 line，并且 reader 内部长度被清零。 */
     if (expect_status(serial_line_feed(&reader, 'S', line, sizeof(line), &length), SERIAL_LINE_STATUS_IDLE) != 0 ||
         expect_status(serial_line_feed(&reader, 'T', line, sizeof(line), &length), SERIAL_LINE_STATUS_IDLE) != 0 ||
         expect_status(serial_line_feed(&reader, '\n', line, sizeof(line), &length), SERIAL_LINE_STATUS_LINE_READY) != 0 ||
@@ -78,6 +80,7 @@ static int test_crlf_produces_single_line(void)
         return 2;
     }
 
+    /* Windows/串口常见 CRLF 只应产出一行，不能让后面的 LF 再产出空命令。 */
     if (expect_status(serial_line_feed(&reader, '\r', line, sizeof(line), &length), SERIAL_LINE_STATUS_LINE_READY) != 0 ||
         expect_string(line, "STATUS?") != 0 ||
         expect_size(length, 7u) != 0) {
@@ -102,6 +105,7 @@ static int test_empty_lines_are_ignored(void)
         return 1;
     }
 
+    /* 空行被忽略，避免用户多按 Enter 导致上层收到 invalid command。 */
     if (expect_status(serial_line_feed(&reader, '\n', line, sizeof(line), &length), SERIAL_LINE_STATUS_IDLE) != 0 ||
         expect_status(serial_line_feed(&reader, '\r', line, sizeof(line), &length), SERIAL_LINE_STATUS_IDLE) != 0 ||
         expect_status(serial_line_feed(&reader, '\n', line, sizeof(line), &length), SERIAL_LINE_STATUS_IDLE) != 0 ||
@@ -123,6 +127,7 @@ static int test_overflow_resets_reader(void)
         return 1;
     }
 
+    /* storage[4] 需要给 '\0' 留空间，所以第 4 个普通字符会触发 overflow 并复位 reader。 */
     if (expect_status(serial_line_feed(&reader, 'A', line, sizeof(line), &length), SERIAL_LINE_STATUS_IDLE) != 0 ||
         expect_status(serial_line_feed(&reader, 'B', line, sizeof(line), &length), SERIAL_LINE_STATUS_IDLE) != 0 ||
         expect_status(serial_line_feed(&reader, 'C', line, sizeof(line), &length), SERIAL_LINE_STATUS_IDLE) != 0 ||
@@ -135,6 +140,7 @@ static int test_overflow_resets_reader(void)
         return 3;
     }
 
+    /* 溢出后仍能继续接收下一行，这是串口长时间运行时需要的恢复能力。 */
     return 0;
 }
 
@@ -155,6 +161,7 @@ static int test_invalid_arguments_are_rejected(void)
         return 2;
     }
 
+    /* 公共 feed 入口要拒绝所有关键空指针，避免上层错误调用破坏内存。 */
     if (expect_status(serial_line_feed(0, 'A', line, sizeof(line), &length), SERIAL_LINE_STATUS_ERROR) != 0 ||
         expect_status(serial_line_feed(&reader, 'A', 0, sizeof(line), &length), SERIAL_LINE_STATUS_ERROR) != 0 ||
         expect_status(serial_line_feed(&reader, 'A', line, 0u, &length), SERIAL_LINE_STATUS_ERROR) != 0 ||

@@ -9,6 +9,7 @@ static int expect_string(const char *actual, const char *expected)
 
 int main(void)
 {
+    /* app_info 是主机仿真和固件都会用到的身份信息，测试固定对外显示文本。 */
     if (!expect_string(app_info_project_name(), "Embedded Workbench")) {
         return 1;
     }
@@ -25,6 +26,7 @@ int main(void)
         return 4;
     }
 
+    /* 未知运行模式要有稳定回退文本，避免日志里出现空指针或随机字符串。 */
     if (!expect_string(app_info_run_mode_name((app_run_mode_t)99), "unknown")) {
         return 5;
     }

@@ -3,6 +3,7 @@
 #include "embedded_workbench/rtos_port.h"
 
 typedef struct {
+    /* fake context 只记录调用次数，不依赖真实 FreeRTOS。 */
     bool started;
     unsigned int sensor_sample_count;
     unsigned int command_count;
@@ -90,6 +91,7 @@ int main(void)
         return 3;
     }
 
+    /* 无效 sample 被包装层拦下，fake_send_sensor_sample 不会被调用。 */
     if (expect_false(rtos_port_send_sensor_sample(&port, &invalid_sample)) != 0 ||
         expect_uint(context.sensor_sample_count, 1u) != 0) {
         return 4;
@@ -114,6 +116,7 @@ int main(void)
         return 7;
     }
 
+    /* 空 port 是典型防御性失败路径。 */
     if (expect_false(rtos_port_start(0)) != 0) {
         return 8;
     }
