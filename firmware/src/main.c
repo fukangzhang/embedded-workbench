@@ -11,6 +11,7 @@
 #include "embedded_workbench/serial_command_pump.h"
 #include "embedded_workbench/serial_command_service.h"
 #include "embedded_workbench/sensor_sample.h"
+#include "embedded_workbench/sequence_sensor_source.h"
 #include "embedded_workbench/stm32_board_gpio_init.h"
 #include "embedded_workbench/stm32_board_usart2_init.h"
 #include "embedded_workbench/stm32_usart_serial_io.h"
@@ -409,6 +410,38 @@ static void firmware_stm32f401re_real_usart2_command_loop_poll(void)
 static freertos_rtos_port_context_t firmware_rtos_context = {0};
 static rtos_port_t firmware_rtos_port = {0};
 
+/* Scheduler 构建目前还没有真实传感器驱动，所以先给采集任务一组固定样本。
+ * 这组样本会让状态从 normal 走到 warning/alarm，方便后续板上观察告警输出链路。 */
+static const sensor_sample_t firmware_freertos_demo_samples[] = {
+    {250, 500u, 300u, 20u},
+    {360, 600u, 250u, 20u},
+    {460, 700u, 80u, 40u},
+};
+static sequence_sensor_source_t firmware_freertos_sequence_source = {0};
+static sensor_source_t firmware_freertos_sensor_source = {0};
+
+static bool firmware_freertos_runtime_context_init(void)
+{
+    size_t sample_count = sizeof(firmware_freertos_demo_samples) / sizeof(firmware_freertos_demo_samples[0]);
+
+    if (!sequence_sensor_source_init(
+            &firmware_freertos_sequence_source,
+            firmware_freertos_demo_samples,
+            sample_count,
+            true)) {
+        return false;
+    }
+
+    firmware_freertos_sensor_source = sequence_sensor_source_as_source(&firmware_freertos_sequence_source);
+
+    /* FreeRTOS task 只拿 context 指针；scheduler 真正启动后，采集任务从这里读 source，
+     * 输出任务从这里拿 sink，所以这些字段必须在 vTaskStartScheduler 前准备好。 */
+    firmware_rtos_context.sensor_source = &firmware_freertos_sensor_source;
+    firmware_rtos_context.alarm_output_sink = &firmware_alarm_output_sink;
+
+    return sensor_source_is_valid(&firmware_freertos_sensor_source);
+}
+
 static bool firmware_freertos_queue_self_check(const sensor_sample_t *sample, const command_t *command)
 {
     rtos_response_message_t queued_response = {{0}};
@@ -419,7 +452,8 @@ static bool firmware_freertos_queue_self_check(const sensor_sample_t *sample, co
     queued_response.text[2] = '\0';
 
     /* FreeRTOS 自检只验证队列和端口包装能互通，不在这里启动真正的调度器。 */
-    return freertos_rtos_port_init(&firmware_rtos_port, &firmware_rtos_context) &&
+    return firmware_freertos_runtime_context_init() &&
+           freertos_rtos_port_init(&firmware_rtos_port, &firmware_rtos_context) &&
            rtos_port_start(&firmware_rtos_port) &&
            rtos_port_send_sensor_sample(&firmware_rtos_port, sample) &&
            rtos_port_send_command(&firmware_rtos_port, command) &&
@@ -481,7 +515,7 @@ int main(void)
     }
 
 #if defined(EW_FIRMWARE_USE_FREERTOS) && defined(EW_FIRMWARE_START_FREERTOS_SCHEDULER)
-    if (freertos_ready && !freertos_rtos_port_start_scheduler(&firmware_rtos_context)) {
+    if (firmware_self_check == 1 && freertos_ready && !freertos_rtos_port_start_scheduler(&firmware_rtos_context)) {
         /* 正常情况下调度器启动后不应返回；返回说明启动失败或端口尚未真正接好。 */
         firmware_self_check = -2;
     }
