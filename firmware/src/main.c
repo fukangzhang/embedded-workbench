@@ -8,6 +8,7 @@
 #include "embedded_workbench/response_format.h"
 #include "embedded_workbench/rtos_port.h"
 #include "embedded_workbench/rtos_task_model.h"
+#include "embedded_workbench/serial_command_pump.h"
 #include "embedded_workbench/serial_command_service.h"
 #include "embedded_workbench/sensor_sample.h"
 #include "embedded_workbench/stm32_board_gpio_init.h"
@@ -41,6 +42,25 @@ static volatile uint32_t firmware_rcc_apb1enr = 0u;
 static stm32_gpio_registers_t firmware_gpioa_registers = {0};
 static stm32_gpio_registers_t firmware_gpiob_registers = {0};
 static stm32_usart_registers_t firmware_usart2_registers = {0};
+
+typedef struct {
+    const char *text;
+    size_t index;
+} firmware_text_reader_t;
+
+static bool firmware_text_reader_read(void *context, char *byte_out)
+{
+    firmware_text_reader_t *reader = (firmware_text_reader_t *)context;
+
+    if (reader == 0 || byte_out == 0 || reader->text == 0 || reader->text[reader->index] == '\0') {
+        return false;
+    }
+
+    *byte_out = reader->text[reader->index];
+    reader->index++;
+
+    return true;
+}
 
 static bool firmware_alarm_output_self_check(void)
 {
@@ -230,11 +250,12 @@ static bool firmware_usart2_command_service_self_check(void)
     char line_buffer[64];
     char response_buffer[256];
     const char command_text[] = "STATUS?\n";
-    size_t index = 0u;
+    firmware_text_reader_t reader = {command_text, 0u};
+    size_t bytes_read = 0u;
     serial_command_service_status_t status = SERIAL_COMMAND_SERVICE_STATUS_IDLE;
 
     /* 这一段把 USART2 I/O 适配器接到串口命令服务：
-     * command byte -> serial_command_service -> response text -> stm32_usart_serial_io_write。
+     * reader -> serial_command_pump -> serial_command_service -> stm32_usart_serial_io_write。
      * 仍然写模拟 USART2 寄存器，所以它验证调用链，不验证真实 USB-UART 输出。 */
     firmware_usart2_registers.sr = 1u << 7u;
     firmware_usart2_registers.dr = 0u;
@@ -259,16 +280,15 @@ static bool firmware_usart2_command_service_self_check(void)
         return false;
     }
 
-    while (command_text[index] != '\0') {
-        status = serial_command_service_feed(&service, command_text[index]);
-        if (status == SERIAL_COMMAND_SERVICE_STATUS_ERROR ||
-            status == SERIAL_COMMAND_SERVICE_STATUS_OVERFLOW) {
-            return false;
-        }
-        index++;
-    }
+    status = serial_command_pump_poll(
+        &service,
+        firmware_text_reader_read,
+        &reader,
+        sizeof(command_text) - 1u,
+        &bytes_read);
 
     return status == SERIAL_COMMAND_SERVICE_STATUS_RESPONSE_SENT &&
+           bytes_read == sizeof(command_text) - 1u &&
            response_buffer[0] == 'O' &&
            response_buffer[1] == 'K' &&
            firmware_usart2_registers.dr == (uint32_t)'\n';
