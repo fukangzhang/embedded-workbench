@@ -65,6 +65,8 @@ $env:ZIG_RANLIB='C:\Users\fukan\.codex\venvs\embedded-workbench-toolchain\Script
 
 ```text
 build-fw-real-gpio/embedded_firmware.elf
+build-fw-real-gpio/embedded_firmware.bin
+build-fw-real-gpio/embedded_firmware.hex
 ```
 
 构建开启真实 STM32 USART2 命令轮询路径的固件：
@@ -87,7 +89,11 @@ build-fw-real-gpio/embedded_firmware.elf
 
 ```text
 build-fw-real-usart2-command/embedded_firmware.elf
+build-fw-real-usart2-command/embedded_firmware.bin
+build-fw-real-usart2-command/embedded_firmware.hex
 ```
+
+`ELF` 更适合调试器，`BIN/HEX` 更适合烧录工具。具体用哪个取决于后续选择 STM32CubeProgrammer、OpenOCD 还是其他 ST-LINK 工具。
 
 ## 烧录前硬件检查
 
