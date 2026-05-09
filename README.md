@@ -38,9 +38,9 @@
 
 到目前为止，仓库已经不是空骨架，已经具备下面这些可展示内容：
 
-- 主机侧 CMake 工程、主机仿真程序 `host_sim`、35 个主机测试和 GitHub CI
+- 主机侧 CMake 工程、主机仿真程序 `host_sim`、36 个主机测试和 GitHub CI
 - 传感器采样模型、传感器来源接口、序列模拟传感器来源、采集步骤桥接、环境处理步骤、环境配置安全更新、告警状态机、告警输出策略、闪烁节拍和数字输出抽象
-- 文本命令链路：串口行缓冲、串口命令服务、串口命令 pump、解析命令、处理配置、SAMPLE 样本注入、格式化响应、命令会话、脚本化 host_sim 输入
+- 文本命令链路：串口行缓冲、串口命令服务、串口命令 ingress、串口命令 pump、解析命令、处理配置、SAMPLE 样本注入、格式化响应、命令会话、脚本化 host_sim 输入
 - STM32 固件骨架：启动文件、freestanding libc、ELF/BIN/HEX 固件产物、真实 GPIO 初始化开关、USART2 初始化、命令 pump 自检和真实 USART2 命令 loop 开关
 - NUCLEO-F401RE bring-up 辅助：OpenOCD dry-run/烧录脚本、ST-LINK/STM32F4 默认配置和板上验证记录入口
 - BSP/driver 边界：板级 profile、GPIO 寄存器配置、RCC GPIO/USART 时钟、USART 寄存器 helper、USART 串口 IO 适配器、STM32F401RE GPIO/USART2 地址绑定、板级 USART2 初始化
@@ -75,13 +75,14 @@
 4. 串口命令链路：
    - `docs/learning/2026-05-08-串口行缓冲模块.md`
    - `docs/learning/2026-05-09-串口命令服务.md`
+   - `docs/learning/2026-05-09-串口命令Ingress.md`
    - `docs/learning/2026-05-09-串口命令Pump.md`
    - `docs/learning/2026-05-08-命令解析.md`
    - `docs/learning/2026-05-08-命令处理与配置应用.md`
    - `docs/learning/2026-05-08-命令会话模块.md`
    - `docs/learning/2026-05-09-命令响应步骤.md`
    - `docs/learning/2026-05-09-SAMPLE命令.md`
-   - 对应代码：`drivers/src/serial_line.c`、`app/src/serial_command_service.c`、`app/src/serial_command_pump.c`、`drivers/src/command_parser.c`、`app/src/command_handler.c`、`app/src/command_responder.c`、`app/src/command_session.c`
+   - 对应代码：`drivers/src/serial_line.c`、`app/src/serial_command_service.c`、`app/src/serial_command_ingress.c`、`app/src/serial_command_pump.c`、`drivers/src/command_parser.c`、`app/src/command_handler.c`、`app/src/command_responder.c`、`app/src/command_session.c`
 
 5. STM32 和硬件边界：
    - `hardware/nucleo-f401re-bringup.md`
