@@ -34,17 +34,80 @@
 3. 通过 `Git` 分支、计划文档和 `PR` 维持清晰的开发过程
 4. 后续逐步接入 `FreeRTOS`、通信协议、传感器抽象和控制逻辑
 
-## 后续可扩展方向
+## 当前已完成
 
-- `FreeRTOS`
-- `bootloader`
-- 串口 / `CAN` / `Modbus` 等协议支持
-- 主机仿真与目标板双运行模式
-- 更完整的测试和持续集成流程
+到目前为止，仓库已经不是空骨架，已经具备下面这些可展示内容：
+
+- 主机侧 CMake 工程、主机仿真程序 `host_sim`、24 个主机测试和 GitHub CI
+- 传感器采样模型、告警状态机、告警输出策略、闪烁节拍和数字输出抽象
+- 文本命令链路：解析命令、处理配置、格式化响应、命令会话、脚本化 host_sim 输入
+- STM32 固件骨架：启动文件、freestanding libc、基础固件构建、真实 GPIO 初始化开关
+- BSP/driver 边界：板级 profile、GPIO 寄存器配置、RCC 时钟、STM32F401RE 地址绑定
+- FreeRTOS 骨架：任务模型、RTOS port 接口、FreeRTOS task/queue 创建、告警事件流和输出节拍接入
+- C 代码学习注释：关键 `.c/.h` 文件和测试都已经补充初学者导向注释
 
 ## 学习路线
 
-如果你是一边做项目一边学习嵌入式，可以从 `docs/learning/` 开始看。这里会随着代码推进补充关键概念，重点解释“为什么这样设计”，而不是只堆 API 或术语。
+如果你是一边做项目一边学习嵌入式，建议按下面顺序读。不要从所有文档里随机挑，先跟着这条主线建立整体图，再回头补细节。
+
+1. 项目怎么推进：
+   - `WORKFLOW.md`
+   - `ARCHITECTURE.md`
+   - `docs/learning/2026-05-08-项目路线与前后端取舍.md`
+
+2. C 工程和主机验证：
+   - `docs/learning/2026-05-08-C工程骨架与主机仿真.md`
+   - `docs/learning/2026-05-08-主机测试CI.md`
+   - 对应代码：`CMakeLists.txt`、`tools/host_sim/main.c`、`tests/`
+
+3. 业务核心逻辑：
+   - `docs/learning/2026-05-08-传感器数据模型.md`
+   - `docs/learning/2026-05-08-告警状态机.md`
+   - `docs/learning/2026-05-08-告警输出策略.md`
+   - `docs/learning/2026-05-08-告警输出节拍逻辑.md`
+   - 对应代码：`drivers/include/embedded_workbench/sensor_sample.h`、`app/src/alarm_state.c`、`app/src/alarm_output*.c`
+
+4. 串口命令链路：
+   - `docs/learning/2026-05-08-串口行缓冲模块.md`
+   - `docs/learning/2026-05-08-命令解析.md`
+   - `docs/learning/2026-05-08-命令处理与配置应用.md`
+   - `docs/learning/2026-05-08-命令会话模块.md`
+   - 对应代码：`drivers/src/serial_line.c`、`drivers/src/command_parser.c`、`app/src/command_handler.c`、`app/src/command_session.c`
+
+5. STM32 和硬件边界：
+   - `hardware/nucleo-f401re-bringup.md`
+   - `docs/learning/2026-05-08-BSP目标板Profile.md`
+   - `docs/learning/2026-05-08-STM32GPIO初始化配置.md`
+   - `docs/learning/2026-05-08-STM32GPIO输出后端.md`
+   - 对应代码：`bsp/`、`drivers/src/stm32_*.c`、`firmware/src/main.c`
+
+6. FreeRTOS 骨架：
+   - `docs/learning/2026-05-08-FreeRTOS内核接入预研.md`
+   - `docs/learning/2026-05-08-FreeRTOS任务模型.md`
+   - `docs/learning/2026-05-08-FreeRTOS队列型RTOSPort骨架.md`
+   - `docs/learning/2026-05-08-FreeRTOS告警事件流骨架.md`
+   - 对应代码：`app/src/rtos_task_model.c`、`app/src/rtos_port*.c`、`firmware/config/FreeRTOSConfig.h`
+
+7. 读 C 代码注释：
+   - `docs/learning/2026-05-08-C代码注释阅读方法.md`
+   - 这份文档按批次列出“先看哪个文件，再看哪个文件”，适合你对照代码逐段理解。
+
+## 前后端取舍
+
+这个项目目前不急着做 Web 前端。嵌入式项目里的“前端入口”优先是 `host_sim`、串口命令和后续真实板卡串口日志，因为它们更贴近 MCU 工作方式，也更适合面试时讲清楚底层链路。
+
+后续如果为了作品展示和简历增强，可以加一个很薄的 PC dashboard，但它应该消费串口/日志/仿真输出，而不是抢在固件主线前面变成另一个独立 Web 项目。
+
+## 后续可扩展方向
+
+近期优先级建议如下：
+
+1. 真实 NUCLEO-F401RE bring-up：烧录固件、确认 GPIO 输出和失败定位流程
+2. UART 接入：把真实串口字节接到 `serial_line` 和 command session
+3. 传感器驱动抽象：从固定 sample 走向模拟/真实传感器输入
+4. FreeRTOS 运行闭环：采集、处理、通信、输出任务之间跑通真实队列
+5. 协议扩展：在串口命令稳定后，再考虑 `Modbus`、`CAN` 或更完整的 telemetry
+6. 展示增强：需要作品集效果时，再增加 PC dashboard 或日志可视化
 
 ## 硬件 Bring-up
 
