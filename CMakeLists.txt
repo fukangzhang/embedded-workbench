@@ -11,6 +11,7 @@ option(EW_BUILD_FIRMWARE "Build target firmware ELF" OFF)
 option(EW_USE_FREERTOS "Link target firmware with external FreeRTOS-Kernel" OFF)
 option(EW_FREERTOS_START_SCHEDULER "Call vTaskStartScheduler from target firmware" OFF)
 option(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT "Use STM32F401RE memory-mapped GPIO init path in firmware" OFF)
+option(EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP "Use STM32F401RE memory-mapped USART2 command polling loop in firmware" OFF)
 
 if(EW_BUILD_TESTS)
     enable_testing()
@@ -145,6 +146,13 @@ if(EW_BUILD_FIRMWARE)
         target_compile_definitions(embedded_firmware
             PRIVATE
                 EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT=1
+        )
+    endif()
+
+    if(EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP)
+        target_compile_definitions(embedded_firmware
+            PRIVATE
+                EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP=1
         )
     endif()
 

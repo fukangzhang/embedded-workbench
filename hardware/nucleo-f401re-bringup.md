@@ -67,6 +67,28 @@ $env:ZIG_RANLIB='C:\Users\fukan\.codex\venvs\embedded-workbench-toolchain\Script
 build-fw-real-gpio/embedded_firmware.elf
 ```
 
+构建开启真实 STM32 USART2 命令轮询路径的固件：
+
+```powershell
+& 'C:\Users\fukan\.codex\venvs\embedded-workbench-toolchain\Scripts\cmake.exe' -S . -B build-fw-real-usart2-command -G Ninja `
+  -D CMAKE_MAKE_PROGRAM='C:\Users\fukan\.codex\venvs\embedded-workbench-toolchain\Scripts\ninja.exe' `
+  -D CMAKE_TOOLCHAIN_FILE=cmake/toolchains/zig-arm-none-eabi.cmake `
+  -D ZIG_EXE='C:\Users\fukan\.codex\venvs\embedded-workbench-toolchain\Lib\site-packages\ziglang\zig.exe' `
+  -D ZIG_AR='C:\Users\fukan\.codex\venvs\embedded-workbench-toolchain\Scripts\zig-ar.cmd' `
+  -D ZIG_RANLIB='C:\Users\fukan\.codex\venvs\embedded-workbench-toolchain\Scripts\zig-ranlib.cmd' `
+  -D EW_BUILD_HOST_TOOLS=OFF `
+  -D EW_BUILD_TESTS=OFF `
+  -D EW_BUILD_FIRMWARE=ON `
+  -D EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP=ON
+& 'C:\Users\fukan\.codex\venvs\embedded-workbench-toolchain\Scripts\cmake.exe' --build build-fw-real-usart2-command
+```
+
+真实 USART2 命令验证应使用：
+
+```text
+build-fw-real-usart2-command/embedded_firmware.elf
+```
+
 ## 烧录前硬件检查
 
 1. 用 USB 连接 NUCLEO-F401RE 的 ST-LINK USB 口。
@@ -123,12 +145,15 @@ stm32f401re_gpio_bindings
 
    先确认外接电路，不要直接把失败归因于软件。`PB6/PB7` 当前仍是占位输出，真正接线后应更新本文件和 `board_profile`。
 
+7. 串口没有响应
+
+   先确认使用的是 `build-fw-real-usart2-command/embedded_firmware.elf`，串口参数为 `9600 8N1`，并且终端发送了 `STATUS?` 加换行。再检查 PA2/PA3 是否走 ST-LINK VCP，对应 `USART2_TX/USART2_RX`。
+
 ## 本次还不验证什么
 
 这份清单不证明：
 
 - FreeRTOS 任务已经在板上稳定调度。
-- 串口命令已经能通过 ST-LINK VCP 交互。
 - 真实传感器已经接入。
 - 蜂鸣器和执行器电路已经可用。
 

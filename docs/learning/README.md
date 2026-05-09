@@ -191,6 +191,7 @@
 - `2026-05-08-固件STM32GPIO初始化链路自检.md`
 - `2026-05-09-固件USART2初始化链路自检.md`
 - `2026-05-09-固件USART2命令服务自检.md`
+- `2026-05-09-固件真实USART2命令Loop开关.md`
 
 对应代码：
 
@@ -263,6 +264,7 @@
 - 固件入口如何用模拟寄存器验证 STM32 USART2 初始化链路
 - 固件入口如何把串口命令服务响应写到 USART2 I/O 适配器
 - 固件入口如何用串口命令 pump 串起 reader、命令服务和 USART2 writer
+- `EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP` 为什么默认关闭，以及打开后会运行哪条真实 USART2 命令轮询链路
 - 固件自检为什么能覆盖输出链路链接，但不能证明真实 GPIO 已经动作
 - startup 文件和 linker script 是什么角色
 - 为什么当前 Zig 路径是构建验证，不是最终板上工具链

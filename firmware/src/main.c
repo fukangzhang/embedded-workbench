@@ -34,6 +34,15 @@ static digital_output_controller_t firmware_digital_output = {0};
 static alarm_output_digital_sink_context_t firmware_alarm_output_digital_context = {0};
 static alarm_output_sink_t firmware_alarm_output_sink = {0};
 static stm32_usart_serial_io_context_t firmware_usart2_serial_io = {0};
+static serial_command_service_t firmware_usart2_command_service = {0};
+static bool firmware_usart2_command_loop_ready = false;
+
+static alarm_config_t firmware_usart2_command_config;
+static alarm_state_t firmware_usart2_command_state = ALARM_STATE_NORMAL;
+static sensor_sample_t firmware_usart2_command_sample;
+static char firmware_usart2_rx_buffer[96];
+static char firmware_usart2_line_buffer[96];
+static char firmware_usart2_response_buffer[256];
 
 /* 下面这组不是 STM32 真实地址，而是固件自检用的模拟寄存器。
  * 真实地址绑定在 stm32f401re_gpio_bindings 模块里，当前 main 仍然保持可构建、可链接的安全自检。 */
@@ -317,6 +326,85 @@ static bool firmware_stm32f401re_real_gpio_init(void)
 }
 #endif
 
+#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP)
+static bool firmware_stm32f401re_real_usart2_command_loop_init(void)
+{
+    stm32_rcc_gpio_clock_context_t gpio_clock_context;
+    stm32_gpio_config_context_t gpio_context;
+    stm32_rcc_usart_clock_context_t usart_clock_context;
+    size_t gpio_clock_count = 0u;
+    size_t gpio_port_count = 0u;
+    size_t usart_clock_count = 0u;
+    const stm32_rcc_gpio_clock_port_t *gpio_clock_ports =
+        stm32f401re_gpio_clock_ports(&gpio_clock_count);
+    const stm32_gpio_config_port_t *gpio_ports =
+        stm32f401re_gpio_config_ports(&gpio_port_count);
+    const stm32_rcc_usart_clock_peripheral_t *usart_clock_peripherals =
+        stm32f401re_usart_clock_peripherals(&usart_clock_count);
+    stm32_usart_registers_t *usart2_registers = stm32f401re_usart2_registers();
+    stm32_usart_config_t usart_config = stm32_usart_config_default(SystemCoreClock, 9600u);
+    bool ready = false;
+
+    firmware_usart2_command_loop_ready = false;
+    firmware_usart2_command_config = alarm_config_default();
+    firmware_usart2_command_state = ALARM_STATE_NORMAL;
+    firmware_usart2_command_sample = sensor_sample_make(250, 500u, 300u, 20u);
+
+    /* 这个路径会解引用 STM32F401RE 的真实 RCC/GPIO/USART2 地址。
+     * 默认关闭，只在真实板卡 bring-up 或专门构建验证时启用。 */
+    ready = stm32_rcc_gpio_clock_init(
+                &gpio_clock_context,
+                stm32f401re_rcc_ahb1enr(),
+                gpio_clock_ports,
+                gpio_clock_count) &&
+            stm32_gpio_config_init(&gpio_context, gpio_ports, gpio_port_count) &&
+            stm32_rcc_usart_clock_init(
+                &usart_clock_context,
+                stm32f401re_rcc_apb1enr(),
+                usart_clock_peripherals,
+                usart_clock_count) &&
+            stm32_board_usart2_init(
+                &gpio_clock_context,
+                &gpio_context,
+                &usart_clock_context,
+                usart2_registers,
+                &usart_config) &&
+            stm32_usart_serial_io_init(
+                &firmware_usart2_serial_io,
+                usart2_registers,
+                STM32_USART_SERIAL_IO_DEFAULT_MAX_POLL_ATTEMPTS) &&
+            serial_command_service_init(
+                &firmware_usart2_command_service,
+                firmware_usart2_rx_buffer,
+                sizeof(firmware_usart2_rx_buffer),
+                firmware_usart2_line_buffer,
+                sizeof(firmware_usart2_line_buffer),
+                firmware_usart2_response_buffer,
+                sizeof(firmware_usart2_response_buffer),
+                &firmware_usart2_command_config,
+                &firmware_usart2_command_state,
+                &firmware_usart2_command_sample,
+                stm32_usart_serial_io_write,
+                &firmware_usart2_serial_io);
+
+    firmware_usart2_command_loop_ready = ready;
+
+    return ready;
+}
+
+static void firmware_stm32f401re_real_usart2_command_loop_poll(void)
+{
+    if (firmware_usart2_command_loop_ready) {
+        (void)serial_command_pump_poll(
+            &firmware_usart2_command_service,
+            stm32_usart_serial_io_read_byte,
+            &firmware_usart2_serial_io,
+            16u,
+            0);
+    }
+}
+#endif
+
 #if defined(EW_FIRMWARE_USE_FREERTOS)
 static freertos_rtos_port_context_t firmware_rtos_context = {0};
 static rtos_port_t firmware_rtos_port = {0};
@@ -352,6 +440,8 @@ int main(void)
     char response[160];
     bool freertos_ready = true;
     bool real_gpio_ready = true;
+    bool base_self_check_ready = false;
+    bool real_usart2_command_loop_ready = true;
 
     command_init(&command);
     command.type = COMMAND_TYPE_GET_STATUS;
@@ -368,16 +458,23 @@ int main(void)
     real_gpio_ready = firmware_stm32f401re_real_gpio_init();
 #endif
 
-    if (board_profile_is_valid(board_profile_default()) &&
-        rtos_task_model_is_valid() &&
-        result.status_requested &&
-        response_format_status(response, sizeof(response), firmware_last_state, &sample) &&
-        firmware_alarm_output_self_check() &&
-        firmware_stm32_gpio_init_self_check() &&
-        firmware_stm32_usart2_init_self_check() &&
-        firmware_usart2_command_service_self_check() &&
-        freertos_ready &&
-        real_gpio_ready) {
+    base_self_check_ready = board_profile_is_valid(board_profile_default()) &&
+                            rtos_task_model_is_valid() &&
+                            result.status_requested &&
+                            response_format_status(response, sizeof(response), firmware_last_state, &sample) &&
+                            firmware_alarm_output_self_check() &&
+                            firmware_stm32_gpio_init_self_check() &&
+                            firmware_stm32_usart2_init_self_check() &&
+                            firmware_usart2_command_service_self_check() &&
+                            freertos_ready &&
+                            real_gpio_ready;
+
+#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP)
+    real_usart2_command_loop_ready =
+        base_self_check_ready && firmware_stm32f401re_real_usart2_command_loop_init();
+#endif
+
+    if (base_self_check_ready && real_usart2_command_loop_ready) {
         firmware_self_check = 1;
     } else {
         firmware_self_check = -1;
@@ -391,5 +488,8 @@ int main(void)
 #endif
 
     while (1) {
+#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP)
+        firmware_stm32f401re_real_usart2_command_loop_poll();
+#endif
     }
 }
