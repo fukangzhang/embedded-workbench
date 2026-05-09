@@ -42,6 +42,7 @@
 - 传感器采样模型、告警状态机、告警输出策略、闪烁节拍和数字输出抽象
 - 文本命令链路：串口行缓冲、串口命令服务、串口命令 pump、解析命令、处理配置、格式化响应、命令会话、脚本化 host_sim 输入
 - STM32 固件骨架：启动文件、freestanding libc、ELF/BIN/HEX 固件产物、真实 GPIO 初始化开关、USART2 初始化、命令 pump 自检和真实 USART2 命令 loop 开关
+- NUCLEO-F401RE bring-up 辅助：OpenOCD dry-run/烧录脚本、ST-LINK/STM32F4 默认配置和板上验证记录入口
 - BSP/driver 边界：板级 profile、GPIO 寄存器配置、RCC GPIO/USART 时钟、USART 寄存器 helper、USART 串口 IO 适配器、STM32F401RE GPIO/USART2 地址绑定、板级 USART2 初始化
 - FreeRTOS 骨架：任务模型、RTOS port 接口、FreeRTOS task/queue 创建、告警事件流和输出节拍接入
 - C 代码学习注释：关键 `.c/.h` 文件和测试都已经补充初学者导向注释
@@ -88,6 +89,7 @@
    - `docs/learning/2026-05-09-STM32F401REUSART2绑定.md`
    - `docs/learning/2026-05-09-STM32板级USART2初始化.md`
    - `docs/learning/2026-05-09-固件ELF-BIN-HEX产物.md`
+   - `docs/learning/2026-05-09-OpenOCD烧录入口.md`
    - `docs/learning/2026-05-09-固件USART2初始化链路自检.md`
    - `docs/learning/2026-05-09-固件USART2命令服务自检.md`
    - `docs/learning/2026-05-09-固件真实USART2命令Loop开关.md`
@@ -124,4 +126,4 @@
 
 ## 硬件 Bring-up
 
-真实板卡验证前，先看 `hardware/` 下的清单。目前入口是 `hardware/nucleo-f401re-bringup.md`，用于记录 NUCLEO-F401RE 的引脚依据、固件构建、烧录前检查和失败定位顺序。
+真实板卡验证前，先看 `hardware/` 下的清单。目前入口是 `hardware/nucleo-f401re-bringup.md`，用于记录 NUCLEO-F401RE 的引脚依据、固件构建、OpenOCD dry-run/烧录入口、烧录前检查和失败定位顺序。

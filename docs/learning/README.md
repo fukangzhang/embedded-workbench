@@ -190,6 +190,7 @@
 - `2026-05-08-固件告警输出链路自检.md`
 - `2026-05-08-固件STM32GPIO初始化链路自检.md`
 - `2026-05-09-固件ELF-BIN-HEX产物.md`
+- `2026-05-09-OpenOCD烧录入口.md`
 - `2026-05-09-固件USART2初始化链路自检.md`
 - `2026-05-09-固件USART2命令服务自检.md`
 - `2026-05-09-固件真实USART2命令Loop开关.md`
@@ -221,6 +222,7 @@
 - `drivers/include/embedded_workbench/stm32f401re_gpio_bindings.h`
 - `drivers/src/stm32f401re_gpio_bindings.c`
 - `CMakeLists.txt`
+- `scripts/flash_nucleo_f401re_openocd.ps1`
 - `.github/workflows/ci.yml`
 - `hardware/nucleo-f401re-bringup.md`
 - `firmware/src/main.c`
@@ -263,6 +265,7 @@
 - `firmware/src/main.c` 现在做了哪些自检
 - 固件入口如何用模拟寄存器验证 STM32 GPIO 初始化链路
 - 固件构建为什么同时生成 ELF、BIN 和 HEX
+- OpenOCD 烧录脚本如何把 ELF/HEX/BIN 交给 ST-LINK，并为什么先 dry-run
 - 固件入口如何用模拟寄存器验证 STM32 USART2 初始化链路
 - 固件入口如何把串口命令服务响应写到 USART2 I/O 适配器
 - 固件入口如何用串口命令 pump 串起 reader、命令服务和 USART2 writer
