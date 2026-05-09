@@ -41,6 +41,7 @@ add_library(embedded_drivers
     drivers/src/command_parser.c
     drivers/src/digital_output.c
     drivers/src/sensor_sample.c
+    drivers/src/sequence_sensor_source.c
     drivers/src/serial_line.c
     drivers/src/stm32_board_gpio_init.c
     drivers/src/stm32_board_usart2_init.c
@@ -245,6 +246,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME sensor_source COMMAND test_sensor_source)
+
+    add_executable(test_sequence_sensor_source
+        tests/test_sequence_sensor_source.c
+    )
+
+    target_link_libraries(test_sequence_sensor_source
+        PRIVATE
+            embedded_drivers
+    )
+
+    add_test(NAME sequence_sensor_source COMMAND test_sequence_sensor_source)
 
     add_executable(test_alarm_state
         tests/test_alarm_state.c

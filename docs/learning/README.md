@@ -57,6 +57,7 @@
 
 - `2026-05-08-传感器数据模型.md`
 - `2026-05-09-传感器来源接口.md`
+- `2026-05-09-序列传感器来源.md`
 - `2026-05-08-告警状态机.md`
 - `2026-05-08-告警输出策略.md`
 - `2026-05-08-告警输出节拍逻辑.md`
@@ -70,6 +71,8 @@
 - `drivers/src/sensor_sample.c`
 - `drivers/include/embedded_workbench/sensor_source.h`
 - `drivers/src/sensor_source.c`
+- `drivers/include/embedded_workbench/sequence_sensor_source.h`
+- `drivers/src/sequence_sensor_source.c`
 - `app/include/embedded_workbench/alarm_state.h`
 - `app/src/alarm_state.c`
 - `app/include/embedded_workbench/alarm_output.h`
@@ -84,6 +87,7 @@
 - `tools/host_sim/main.c`
 - `tests/test_sensor_sample.c`
 - `tests/test_sensor_source.c`
+- `tests/test_sequence_sensor_source.c`
 - `tests/test_alarm_state.c`
 - `tests/test_alarm_output.c`
 - `tests/test_alarm_output_timing.c`
@@ -96,6 +100,7 @@
 - 一个传感器样本里有哪些字段
 - 为什么要校验传感器数据范围
 - `sensor_source` 为什么只负责读取 sample，不负责判断告警
+- `sequence_sensor_source` 如何让 host_sim demo 通过统一 source 接口读取样本
 - warning/alarm/recovery 这些阈值怎么影响状态切换
 - 为什么“告警状态”和“硬件输出策略”要分成两个模块
 - `period_ms` 如何变成 indicator 的亮灭节拍
@@ -367,6 +372,7 @@
 ```text
 sensor_sample
   -> sensor_source
+  -> sequence_sensor_source
   -> alarm_state
   -> alarm_output
   -> alarm_output_timing
