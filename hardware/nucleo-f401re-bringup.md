@@ -95,6 +95,38 @@ build-fw-real-usart2-command/embedded_firmware.hex
 
 `ELF` 更适合调试器，`BIN/HEX` 更适合烧录工具。具体用哪个取决于后续选择 STM32CubeProgrammer、OpenOCD 还是其他 ST-LINK 工具。
 
+## OpenOCD 烧录入口
+
+当前仓库提供了一个 OpenOCD 辅助脚本。第一次使用先 dry-run，只看命令，不连接板子：
+
+```powershell
+.\scripts\flash_nucleo_f401re_openocd.ps1 -DryRun
+```
+
+默认镜像是：
+
+```text
+build-fw-real-usart2-command/embedded_firmware.elf
+```
+
+真实烧录时，先确认 OpenOCD 已安装、NUCLEO-F401RE 已通过 ST-LINK USB 口连接，再运行：
+
+```powershell
+.\scripts\flash_nucleo_f401re_openocd.ps1
+```
+
+如果要烧录 `.bin`，脚本会自动补 STM32F401RE 内部 flash 起始地址 `0x08000000`：
+
+```powershell
+.\scripts\flash_nucleo_f401re_openocd.ps1 -ImagePath build-fw-real-usart2-command\embedded_firmware.bin
+```
+
+如果 `openocd` 不在 PATH 中，可以显式传入可执行文件路径：
+
+```powershell
+.\scripts\flash_nucleo_f401re_openocd.ps1 -OpenOcd 'C:\tools\openocd\bin\openocd.exe'
+```
+
 ## 烧录前硬件检查
 
 1. 用 USB 连接 NUCLEO-F401RE 的 ST-LINK USB 口。
