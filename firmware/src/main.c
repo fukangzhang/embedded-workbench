@@ -421,8 +421,9 @@ static const sensor_sample_t firmware_freertos_demo_samples[] = {
 static sequence_sensor_source_t firmware_freertos_sequence_source = {0};
 static sensor_source_t firmware_freertos_sensor_source = {0};
 
-#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER)
-static bool firmware_stm32f401re_freertos_usart2_command_reader_init(void)
+#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER) || \
+    defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_RESPONSE_WRITER)
+static bool firmware_stm32f401re_freertos_usart2_io_init(void)
 {
     stm32_rcc_gpio_clock_context_t gpio_clock_context;
     stm32_gpio_config_context_t gpio_context;
@@ -439,7 +440,7 @@ static bool firmware_stm32f401re_freertos_usart2_command_reader_init(void)
     stm32_usart_registers_t *usart2_registers = stm32f401re_usart2_registers();
     stm32_usart_config_t usart_config = stm32_usart_config_default(SystemCoreClock, 9600u);
 
-    /* FreeRTOS reader 使用独立 serial I/O context。
+    /* FreeRTOS USART2 I/O 使用独立 serial I/O context。
      * 现有 USART2 自检会临时把 firmware_usart2_serial_io 指向模拟寄存器，不能复用。 */
     if (!stm32_rcc_gpio_clock_init(
             &gpio_clock_context,
@@ -465,8 +466,16 @@ static bool firmware_stm32f401re_freertos_usart2_command_reader_init(void)
         return false;
     }
 
+#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER)
     firmware_rtos_context.command_read = stm32_usart_serial_io_read_byte;
     firmware_rtos_context.command_read_context = &firmware_freertos_usart2_serial_io;
+#endif
+
+#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_RESPONSE_WRITER)
+    firmware_rtos_context.response_write = stm32_usart_serial_io_write;
+    firmware_rtos_context.response_write_context = &firmware_freertos_usart2_serial_io;
+#endif
+
     return true;
 }
 #endif
@@ -490,8 +499,9 @@ static bool firmware_freertos_runtime_context_init(void)
     firmware_rtos_context.sensor_source = &firmware_freertos_sensor_source;
     firmware_rtos_context.alarm_output_sink = &firmware_alarm_output_sink;
 
-#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER)
-    if (!firmware_stm32f401re_freertos_usart2_command_reader_init()) {
+#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER) || \
+    defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_RESPONSE_WRITER)
+    if (!firmware_stm32f401re_freertos_usart2_io_init()) {
         return false;
     }
 #endif

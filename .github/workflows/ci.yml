@@ -216,3 +216,22 @@ jobs:
 
       - name: Build FreeRTOS firmware with real USART2 command reader
         run: cmake --build build-fw-rtos-real-usart2-reader
+
+      - name: Configure FreeRTOS firmware with real USART2 command I/O
+        env:
+          ZIG_EXE: ${{ steps.zig.outputs.zig_exe }}
+          ZIG_AR: ${{ steps.zig.outputs.zig_ar }}
+          ZIG_RANLIB: ${{ steps.zig.outputs.zig_ranlib }}
+        run: |
+          cmake -S . -B build-fw-rtos-real-usart2-io -G Ninja \
+            -D CMAKE_TOOLCHAIN_FILE=cmake/toolchains/zig-arm-none-eabi.cmake \
+            -D EW_BUILD_HOST_TOOLS=OFF \
+            -D EW_BUILD_TESTS=OFF \
+            -D EW_BUILD_FIRMWARE=ON \
+            -D EW_USE_FREERTOS=ON \
+            -D EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER=ON \
+            -D EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_RESPONSE_WRITER=ON \
+            -D FREERTOS_KERNEL_PATH="${RUNNER_TEMP}/FreeRTOS-Kernel"
+
+      - name: Build FreeRTOS firmware with real USART2 command I/O
+        run: cmake --build build-fw-rtos-real-usart2-io

@@ -2,6 +2,7 @@
 #define EMBEDDED_WORKBENCH_RTOS_PORT_FREERTOS_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "FreeRTOS.h"
 #include "queue.h"
@@ -11,6 +12,8 @@
 #include "embedded_workbench/rtos_port.h"
 #include "embedded_workbench/sensor_source.h"
 #include "embedded_workbench/serial_command_ingress_pump.h"
+
+typedef bool (*freertos_rtos_port_response_write_fn)(void *context, const char *data, size_t length);
 
 typedef struct {
     /* FreeRTOS 的队列和任务句柄都集中放在 context 里。
@@ -32,6 +35,11 @@ typedef struct {
      * 为空时保持原有行为：只消费外部已经放入 command_queue 的 command_t。 */
     serial_command_ingress_pump_read_fn command_read;
     void *command_read_context;
+
+    /* 可选响应写出端。配置后 communication_task 会把 response_queue 的文本写到串口等后端。
+     * 为空时保持测试/早期固件行为：响应只留在 response_queue，等待外部 receive_response。 */
+    freertos_rtos_port_response_write_fn response_write;
+    void *response_write_context;
 
     /* xTaskCreate 会把创建出来的任务句柄写到这些字段。
      * 后续判断任务是否已经创建、是否可以启动调度器，都靠这些字段。 */

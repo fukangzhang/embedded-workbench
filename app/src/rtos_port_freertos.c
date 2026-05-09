@@ -186,6 +186,44 @@ static bool freertos_submit_config_update(freertos_rtos_port_context_t *context,
     return xQueueSend(context->config_update_queue, config, (TickType_t)0) == pdPASS;
 }
 
+static size_t response_text_length(const rtos_response_message_t *response)
+{
+    size_t length = 0u;
+
+    if (response == 0) {
+        return 0u;
+    }
+
+    while (length < sizeof(response->text) && response->text[length] != '\0') {
+        length++;
+    }
+
+    return length;
+}
+
+static void freertos_drain_responses_to_writer(freertos_rtos_port_context_t *context)
+{
+    rtos_response_message_t response = {{0}};
+    size_t length = 0u;
+
+    if (context == 0 ||
+        context->response_queue == 0 ||
+        context->response_write == 0) {
+        return;
+    }
+
+    /* 先 peek 再写：只有 writer 确认成功后才真正从 queue 移除响应。
+     * 如果 USART 暂时不可写，响应还留在队列里，下一轮通信任务还有机会重试。 */
+    while (xQueuePeek(context->response_queue, &response, (TickType_t)0) == pdPASS) {
+        length = response_text_length(&response);
+        if (!context->response_write(context->response_write_context, response.text, length)) {
+            break;
+        }
+
+        (void)xQueueReceive(context->response_queue, &response, (TickType_t)0);
+    }
+}
+
 static bool freertos_submit_ingress_command(void *context, const command_t *command)
 {
     freertos_rtos_port_context_t *freertos_context = (freertos_rtos_port_context_t *)context;
@@ -256,7 +294,9 @@ static void communication_task(void *parameter)
                 if (status.config_changed) {
                     (void)freertos_submit_config_update(context, responder.config);
                 }
-                (void)xQueueSend(context->response_queue, &response, (TickType_t)0);
+                if (xQueueSend(context->response_queue, &response, (TickType_t)0) == pdPASS) {
+                    freertos_drain_responses_to_writer(context);
+                }
             }
         } else if (!responder_ready) {
             delay_for_descriptor(RTOS_TASK_COMMUNICATION);
