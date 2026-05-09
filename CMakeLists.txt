@@ -75,6 +75,7 @@ add_library(embedded_app
     app/src/command_handler.c
     app/src/command_session.c
     app/src/response_format.c
+    app/src/sensor_acquisition.c
     app/src/serial_command_pump.c
     app/src/serial_command_service.c
     app/src/rtos_task_model.c
@@ -246,6 +247,17 @@ if(EW_BUILD_TESTS)
     )
 
     add_test(NAME sensor_source COMMAND test_sensor_source)
+
+    add_executable(test_sensor_acquisition
+        tests/test_sensor_acquisition.c
+    )
+
+    target_link_libraries(test_sensor_acquisition
+        PRIVATE
+            embedded_app
+    )
+
+    add_test(NAME sensor_acquisition COMMAND test_sensor_acquisition)
 
     add_executable(test_sequence_sensor_source
         tests/test_sequence_sensor_source.c

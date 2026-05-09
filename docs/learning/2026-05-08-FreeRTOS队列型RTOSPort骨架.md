@@ -22,7 +22,7 @@ queue 可以理解为任务之间传数据的管道。
 - 处理任务从队列里取出样本，判断告警状态
 - 通信任务把状态格式化成响应消息
 
-当前 `sensor_acquire_task` 已经能从可选 `sensor_source` 读取 sample，再用 `xQueueSend` 放入 `sensor_sample_queue`。如果 source 为空，它仍然只保持周期任务骨架，方便早期固件构建验证。
+当前 `sensor_acquire_task` 已经通过 `sensor_acquisition` 从可选 `sensor_source` 读取 sample，再用 submit callback 调到 `xQueueSend`，放入 `sensor_sample_queue`。如果 source 为空，它仍然只保持周期任务骨架，方便早期固件构建验证。
 
 FreeRTOS queue 默认是“按值复制”。也就是说，`xQueueSend` 会把你传入的数据复制进队列内部存储，而不是只保存一个指针。
 
