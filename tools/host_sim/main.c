@@ -4,8 +4,8 @@
 #include "embedded_workbench/alarm_output.h"
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/app_info.h"
-#include "embedded_workbench/command_session.h"
 #include "embedded_workbench/sensor_sample.h"
+#include "embedded_workbench/serial_command_service.h"
 
 static void print_sample(const sensor_sample_t *sample)
 {
@@ -62,24 +62,48 @@ static alarm_state_t run_demo_samples(const alarm_config_t *config, sensor_sampl
     return state;
 }
 
-static void handle_script_command(
-    const char *line,
-    alarm_config_t *config,
-    alarm_state_t *state,
-    const sensor_sample_t *sample)
+static bool stdout_write(void *context, const char *data, size_t length)
 {
-    command_session_t session;
-    char response[512];
+    (void)context;
 
-    /* session 只借用这些指针，不拥有它们；真正的状态保存在 main 的变量里。 */
-    session.config = config;
-    session.state = state;
-    session.sample = sample;
+    return fwrite(data, 1u, length, stdout) == length;
+}
 
-    /* response 是固定栈缓冲区，command_session 内部会负责长度检查和 '\0' 结尾。 */
-    if (command_session_handle_line(&session, line, response, sizeof(response))) {
-        printf("%s", response);
+static int run_script_mode(alarm_config_t *config, alarm_state_t *state, const sensor_sample_t *sample)
+{
+    serial_command_service_t service;
+    char rx_buffer[128];
+    char line_buffer[128];
+    char response_buffer[512];
+    int input = 0;
+
+    if (!serial_command_service_init(
+            &service,
+            rx_buffer,
+            sizeof(rx_buffer),
+            line_buffer,
+            sizeof(line_buffer),
+            response_buffer,
+            sizeof(response_buffer),
+            config,
+            state,
+            sample,
+            stdout_write,
+            0)) {
+        return 1;
     }
+
+    while ((input = getchar()) != EOF) {
+        serial_command_service_status_t status = serial_command_service_feed(&service, (char)input);
+
+        if (status == SERIAL_COMMAND_SERVICE_STATUS_OVERFLOW) {
+            printf("ERR result=line-overflow\n");
+        } else if (status == SERIAL_COMMAND_SERVICE_STATUS_ERROR) {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 int main(int argc, char **argv)
@@ -93,13 +117,9 @@ int main(int argc, char **argv)
 
     state = run_demo_samples(&config, &last_sample);
 
-    /* --script 模式从 stdin 逐行读命令，适合自动化测试用管道喂 STATUS?/SET 等命令。 */
+    /* --script 模式从 stdin 逐字节读命令，更接近真实串口收 byte 的方式。 */
     if (argc > 1 && strcmp(argv[1], "--script") == 0) {
-        char line[128];
-
-        while (fgets(line, sizeof(line), stdin) != 0) {
-            handle_script_command(line, &config, &state, &last_sample);
-        }
+        return run_script_mode(&config, &state, &last_sample);
     }
 
     return 0;
