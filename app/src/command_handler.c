@@ -29,6 +29,7 @@ static command_handler_result_t make_result(command_result_t result)
     handler_result.config_changed = false;
     handler_result.status_requested = false;
     handler_result.config_requested = false;
+    handler_result.sample_changed = false;
     handler_result.alarm_clear_requested = false;
 
     return handler_result;
@@ -103,13 +104,44 @@ static bool apply_threshold(command_threshold_t threshold, int32_t value, alarm_
     return true;
 }
 
+static bool is_sensor_sample_field_in_type_range(const command_t *command)
+{
+    return is_int16_value(command->sample_temperature_c_x10) &&
+           is_uint16_value(command->sample_humidity_rh_x10) &&
+           is_uint32_value(command->sample_light_lux) &&
+           is_uint16_value(command->sample_smoke_ppm);
+}
+
+static bool apply_sample(const command_t *command, sensor_sample_t *sample)
+{
+    sensor_sample_t next;
+
+    if (!is_sensor_sample_field_in_type_range(command)) {
+        return false;
+    }
+
+    next = sensor_sample_make(
+        (int16_t)command->sample_temperature_c_x10,
+        (uint16_t)command->sample_humidity_rh_x10,
+        (uint32_t)command->sample_light_lux,
+        (uint16_t)command->sample_smoke_ppm);
+
+    if (!sensor_sample_is_valid(&next)) {
+        return false;
+    }
+
+    *sample = next;
+    return true;
+}
+
 command_handler_result_t command_handler_handle(
     const command_t *command,
-    alarm_config_t *config)
+    alarm_config_t *config,
+    sensor_sample_t *sample)
 {
     command_handler_result_t result;
 
-    if (command == 0 || config == 0 || !alarm_config_is_valid(config)) {
+    if (command == 0 || config == 0 || sample == 0 || !alarm_config_is_valid(config)) {
         return make_result(COMMAND_RESULT_INVALID_COMMAND);
     }
 
@@ -135,6 +167,14 @@ command_handler_result_t command_handler_handle(
 
         /* config_changed 表示配置已经成功提交，测试可用它区分“请求合法”和“确实修改”。 */
         result.config_changed = true;
+        return result;
+    case COMMAND_TYPE_SET_SAMPLE:
+        result = make_result(COMMAND_RESULT_OK);
+        if (!apply_sample(command, sample)) {
+            return make_result(COMMAND_RESULT_INVALID_VALUE);
+        }
+
+        result.sample_changed = true;
         return result;
     case COMMAND_TYPE_INVALID:
     default:

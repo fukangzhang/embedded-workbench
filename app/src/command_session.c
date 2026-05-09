@@ -144,22 +144,34 @@ bool command_session_handle_line(
         result.config_changed = false;
         result.status_requested = false;
         result.config_requested = false;
+        result.sample_changed = false;
         result.alarm_clear_requested = false;
         return writer_append_formatted(&writer, format_result_adapter, &result);
     }
 
-    result = command_handler_handle(&command, session->config);
+    result = command_handler_handle(&command, session->config, session->sample);
     if (!writer_append_formatted(&writer, format_result_adapter, &result)) {
         return false;
     }
 
-    if (result.config_changed) {
-        /* 配置改变后，当前样本对应的状态可能也会改变，所以立即重新计算状态。 */
+    if (result.config_changed || result.sample_changed) {
+        /* 配置或样本改变后，当前状态可能也会改变，所以立即重新计算状态。 */
         *session->state = alarm_state_update(*session->state, session->config, session->sample);
+    }
+
+    if (result.config_changed) {
         if (!writer_append_formatted(&writer, format_config_adapter, session->config)) {
             return false;
         }
 
+        status_context.state = *session->state;
+        status_context.sample = session->sample;
+        if (!writer_append_formatted(&writer, format_status_adapter, &status_context)) {
+            return false;
+        }
+    }
+
+    if (result.sample_changed) {
         status_context.state = *session->state;
         status_context.sample = session->sample;
         if (!writer_append_formatted(&writer, format_status_adapter, &status_context)) {

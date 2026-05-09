@@ -191,6 +191,36 @@ static int test_set_updates_config_and_state(void)
     return 0;
 }
 
+static int test_sample_updates_sample_and_state(void)
+{
+    serial_command_service_t service;
+    char rx_buffer[96];
+    char line_buffer[96];
+    char response_buffer[512];
+    alarm_config_t config = alarm_config_default();
+    alarm_state_t state = ALARM_STATE_NORMAL;
+    sensor_sample_t sample = sensor_sample_make(250, 500u, 300u, 20u);
+    capture_writer_t writer = {{0}, 0u, 0u, false};
+
+    if (!make_service(&service, rx_buffer, sizeof(rx_buffer), line_buffer, sizeof(line_buffer),
+            response_buffer, sizeof(response_buffer), &config, &state, &sample, &writer)) {
+        return 1;
+    }
+
+    if (expect_status(feed_text(&service, "SAMPLE 360 600 250 20\n"), SERIAL_COMMAND_SERVICE_STATUS_RESPONSE_SENT) != 0 ||
+        sample.temperature_c_x10 != 360 ||
+        state != ALARM_STATE_WARNING ||
+        expect_uint(writer.write_count, 1u) != 0 ||
+        expect_string(
+            writer.data,
+            "OK result=ok\n"
+            "STATUS state=warning temp_c_x10=360 humidity_rh_x10=600 light_lux=250 smoke_ppm=20 indicator=slow_blink buzzer=off actuator=off period_ms=1000\n") != 0) {
+        return 2;
+    }
+
+    return 0;
+}
+
 static int test_overflow_recovers_for_next_line(void)
 {
     serial_command_service_t service;
@@ -294,14 +324,17 @@ int main(void)
     if (test_set_updates_config_and_state() != 0) {
         return 3;
     }
-    if (test_overflow_recovers_for_next_line() != 0) {
+    if (test_sample_updates_sample_and_state() != 0) {
         return 4;
     }
-    if (test_writer_failure_is_error() != 0) {
+    if (test_overflow_recovers_for_next_line() != 0) {
         return 5;
     }
-    if (test_invalid_arguments_fail() != 0) {
+    if (test_writer_failure_is_error() != 0) {
         return 6;
+    }
+    if (test_invalid_arguments_fail() != 0) {
+        return 7;
     }
 
     return 0;

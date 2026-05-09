@@ -11,11 +11,11 @@ typedef struct {
     /* session 持有一次通信会话需要读写的应用状态。
      *
      * config/state 用指针，是因为 SET 命令和状态重算需要把结果写回调用者。
-     * sample 用 const 指针，是因为命令处理只读取最新样本，不应该在这里改传感器数据。
+     * sample 也用可写指针，是因为 SAMPLE 命令会在没有真实传感器时注入一帧新样本。
      * 未来 host_sim、USART2 task、测试假通信都可以复用同一个处理入口。 */
     alarm_config_t *config;
     alarm_state_t *state;
-    const sensor_sample_t *sample;
+    sensor_sample_t *sample;
 } command_session_t;
 
 /* 处理一行完整命令，并把一条或多条响应拼到 response。

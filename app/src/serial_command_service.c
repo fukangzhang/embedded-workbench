@@ -21,7 +21,7 @@ bool serial_command_service_init(
     size_t response_capacity,
     alarm_config_t *config,
     alarm_state_t *state,
-    const sensor_sample_t *sample,
+    sensor_sample_t *sample,
     serial_command_service_write_fn write,
     void *write_context)
 {

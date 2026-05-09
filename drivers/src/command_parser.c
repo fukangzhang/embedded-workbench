@@ -15,6 +15,10 @@ void command_init(command_t *command)
     command->type = COMMAND_TYPE_INVALID;
     command->threshold = COMMAND_THRESHOLD_NONE;
     command->value = 0;
+    command->sample_temperature_c_x10 = 0;
+    command->sample_humidity_rh_x10 = 0;
+    command->sample_light_lux = 0;
+    command->sample_smoke_ppm = 0;
 }
 
 static bool is_space_char(char value)
@@ -233,6 +237,30 @@ bool command_parse(const char *line, command_t *command)
         return true;
     }
 
+    if (string_equals(token, "SAMPLE")) {
+        int32_t temperature_c_x10 = 0;
+        int32_t humidity_rh_x10 = 0;
+        int32_t light_lux = 0;
+        int32_t smoke_ppm = 0;
+
+        /* SAMPLE 的语法只要求 4 个整数。它们是否落在传感器物理范围内，
+         * 留给 command_handler 统一用 sensor_sample_is_valid 判断。 */
+        if (!parse_int32(cursor, &temperature_c_x10, &cursor) ||
+            !parse_int32(cursor, &humidity_rh_x10, &cursor) ||
+            !parse_int32(cursor, &light_lux, &cursor) ||
+            !parse_int32(cursor, &smoke_ppm, &cursor) ||
+            !has_only_line_end_after_spaces(cursor)) {
+            return false;
+        }
+
+        command->type = COMMAND_TYPE_SET_SAMPLE;
+        command->sample_temperature_c_x10 = temperature_c_x10;
+        command->sample_humidity_rh_x10 = humidity_rh_x10;
+        command->sample_light_lux = light_lux;
+        command->sample_smoke_ppm = smoke_ppm;
+        return true;
+    }
+
     return false;
 }
 
@@ -247,6 +275,8 @@ const char *command_type_name(command_type_t type)
         return "set-threshold";
     case COMMAND_TYPE_CLEAR_ALARM:
         return "clear-alarm";
+    case COMMAND_TYPE_SET_SAMPLE:
+        return "set-sample";
     case COMMAND_TYPE_INVALID:
     default:
         return "invalid";

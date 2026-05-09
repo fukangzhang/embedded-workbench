@@ -447,7 +447,7 @@ int main(void)
     command.type = COMMAND_TYPE_GET_STATUS;
 
     /* main 当前是固件骨架自检入口：把核心纯逻辑串起来，给链接和启动流程一个可观察结果。 */
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     firmware_last_state = alarm_state_update(ALARM_STATE_NORMAL, &config, &sample);
 
 #if defined(EW_FIRMWARE_USE_FREERTOS)

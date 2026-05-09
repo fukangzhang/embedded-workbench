@@ -116,6 +116,50 @@ static int test_set_updates_config_and_status(void)
     return 0;
 }
 
+static int test_sample_updates_sample_and_status(void)
+{
+    alarm_config_t config = alarm_config_default();
+    alarm_state_t state = ALARM_STATE_NORMAL;
+    sensor_sample_t sample = sensor_sample_make(250, 500u, 300u, 20u);
+    command_session_t session = make_session(&config, &state, &sample);
+    char response[512];
+
+    /* SAMPLE 是没有真实传感器时的演示入口：
+     * 命令提交新样本后，session 必须立刻重算状态并回传 STATUS。 */
+    if (expect_true(command_session_handle_line(&session, "SAMPLE 360 600 250 20\n", response, sizeof(response))) != 0 ||
+        expect_int(sample.temperature_c_x10, 360) != 0 ||
+        expect_int(sample.humidity_rh_x10, 600) != 0 ||
+        expect_int((int)sample.light_lux, 250) != 0 ||
+        expect_int(sample.smoke_ppm, 20) != 0 ||
+        expect_int(state, ALARM_STATE_WARNING) != 0 ||
+        expect_string(
+            response,
+            "OK result=ok\n"
+            "STATUS state=warning temp_c_x10=360 humidity_rh_x10=600 light_lux=250 smoke_ppm=20 indicator=slow_blink buzzer=off actuator=off period_ms=1000\n") != 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+static int test_invalid_sample_does_not_change_sample(void)
+{
+    alarm_config_t config = alarm_config_default();
+    alarm_state_t state = ALARM_STATE_NORMAL;
+    sensor_sample_t sample = sensor_sample_make(250, 500u, 300u, 20u);
+    command_session_t session = make_session(&config, &state, &sample);
+    char response[128];
+
+    if (expect_true(command_session_handle_line(&session, "SAMPLE 900 500 300 20\n", response, sizeof(response))) != 0 ||
+        expect_int(sample.temperature_c_x10, 250) != 0 ||
+        expect_int(state, ALARM_STATE_NORMAL) != 0 ||
+        expect_string(response, "ERR result=invalid-value\n") != 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
 static int test_small_output_buffer_fails(void)
 {
     alarm_config_t config = alarm_config_default();
@@ -165,11 +209,17 @@ int main(void)
     if (test_set_updates_config_and_status() != 0) {
         return 4;
     }
-    if (test_small_output_buffer_fails() != 0) {
+    if (test_sample_updates_sample_and_status() != 0) {
         return 5;
     }
-    if (test_invalid_arguments_fail() != 0) {
+    if (test_invalid_sample_does_not_change_sample() != 0) {
         return 6;
+    }
+    if (test_small_output_buffer_fails() != 0) {
+        return 7;
+    }
+    if (test_invalid_arguments_fail() != 0) {
+        return 8;
     }
 
     return 0;
