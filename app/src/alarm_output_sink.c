@@ -1,5 +1,8 @@
 #include "embedded_workbench/alarm_output_sink.h"
 
+/* alarm_output_sink 是输出命令落地前的统一接口。
+ * app 只调用 sink，不需要知道底层是主机模拟、STM32 GPIO，还是以后别的执行器。 */
+
 static bool sink_is_ready(const alarm_output_sink_t *sink)
 {
     return sink != 0 &&

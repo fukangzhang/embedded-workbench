@@ -1,5 +1,8 @@
 #include "embedded_workbench/alarm_state.h"
 
+/* alarm_state 是“传感器样本 -> 告警状态”的核心状态机。
+ * 它只判断 NORMAL/WARNING/ALARM/SENSOR_FAULT，不关心 LED、蜂鸣器或执行器怎么动作。 */
+
 alarm_config_t alarm_config_default(void)
 {
     alarm_config_t config;

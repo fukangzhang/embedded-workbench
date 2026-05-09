@@ -1,7 +1,12 @@
 #include "embedded_workbench/alarm_output_digital_sink.h"
 
+/* alarm_output_digital_sink 把告警输出接口适配到 digital_output。
+ * 它知道 profile 里的三个输出脚，但仍然不直接操作 STM32 寄存器。 */
+
 static digital_output_level_t level_from_enabled(bool enabled)
 {
+    /* 告警输出层用 bool 表达开/关，digital_output 层用 LOW/HIGH 表达电平。
+     * 这个小转换让两个层次保持各自的语言。 */
     return digital_output_level_from_bool(enabled);
 }
 
@@ -16,6 +21,8 @@ static bool set_indicator(
 
     (void)period_ms;
 
+    /* digital sink 只关心“灯此刻是否需要亮”。
+     * 真正的闪烁节拍由 alarm_output_timing 或上层任务先计算好。 */
     return digital_output_write(
         digital_context->digital_output,
         &digital_context->profile->alarm_led,
@@ -63,6 +70,8 @@ bool alarm_output_digital_sink_init(
         return false;
     }
 
+    /* context 保存真实依赖，sink 只暴露统一 ops。
+     * 这就是 C 里常见的“函数指针 + context”接口模式。 */
     context->digital_output = digital_output;
     context->profile = profile;
     sink->ops = &ops;

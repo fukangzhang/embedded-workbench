@@ -1,5 +1,8 @@
 #include "embedded_workbench/alarm_output.h"
 
+/* alarm_output 是“告警状态 -> 输出命令”的翻译层。
+ * 它仍然不碰 GPIO，只生成一个抽象命令，后续 sink 再把命令落到具体硬件或测试后端。 */
+
 bool alarm_output_command_for_state(alarm_state_t state, alarm_output_command_t *command)
 {
     if (command == 0) {

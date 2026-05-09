@@ -1,5 +1,8 @@
 #include "embedded_workbench/alarm_output_timing.h"
 
+/* alarm_output_timing 负责把“闪烁模式”变成某一时刻的开/关结果。
+ * 这样状态策略和时间节拍分开，测试可以直接喂 elapsed_ms 覆盖边界。 */
+
 static bool indicator_is_valid(alarm_output_indicator_t indicator)
 {
     return indicator == ALARM_OUTPUT_INDICATOR_OFF ||
