@@ -12,6 +12,7 @@ option(EW_USE_FREERTOS "Link target firmware with external FreeRTOS-Kernel" OFF)
 option(EW_FREERTOS_START_SCHEDULER "Call vTaskStartScheduler from target firmware" OFF)
 option(EW_FIRMWARE_USE_REAL_STM32_GPIO_INIT "Use STM32F401RE memory-mapped GPIO init path in firmware" OFF)
 option(EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP "Use STM32F401RE memory-mapped USART2 command polling loop in firmware" OFF)
+option(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER "Use STM32F401RE USART2 as the FreeRTOS command reader" OFF)
 set(EW_FIRMWARE_OBJCOPY "" CACHE FILEPATH "Optional objcopy executable for firmware .bin/.hex generation")
 
 if(EW_BUILD_TESTS)
@@ -161,6 +162,13 @@ if(EW_BUILD_FIRMWARE)
         target_compile_definitions(embedded_firmware
             PRIVATE
                 EW_FIRMWARE_USE_REAL_STM32_USART2_COMMAND_LOOP=1
+        )
+    endif()
+
+    if(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER)
+        target_compile_definitions(embedded_firmware
+            PRIVATE
+                EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER=1
         )
     endif()
 
