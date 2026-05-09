@@ -27,17 +27,20 @@ int main(void)
 {
     command_t command;
 
-    /* 先确认初始化会把命令放到安全的 INVALID 状态。 */
+    /* 先确认初始化会把命令放到安全的 INVALID 状态。
+     * 这样解析失败时，上层不会误用上一次残留的命令字段。 */
     command_init(&command);
     if (expect_int(command.type, COMMAND_TYPE_INVALID) != 0) {
         return 1;
     }
 
+    /* 查询命令没有参数，但允许常见的 CRLF 行尾。 */
     if (expect_true(command_parse("STATUS?\r\n", &command)) != 0 ||
         expect_int(command.type, COMMAND_TYPE_GET_STATUS) != 0) {
         return 2;
     }
 
+    /* 前后空格应被忽略，方便人手工在终端输入命令。 */
     if (expect_true(command_parse(" CONFIG? ", &command)) != 0 ||
         expect_int(command.type, COMMAND_TYPE_GET_CONFIG) != 0) {
         return 3;
@@ -72,6 +75,7 @@ int main(void)
         return 8;
     }
 
+    /* 下面这些失败用例分别覆盖未知阈值、非数字、整数溢出和空指针。 */
     if (expect_false(command_parse("SET UNKNOWN 1", &command)) != 0) {
         return 9;
     }
@@ -97,6 +101,7 @@ int main(void)
         return 14;
     }
 
+    /* name 函数输出会出现在日志/调试里，也需要固定下来。 */
     if (expect_string(command_type_name(COMMAND_TYPE_SET_THRESHOLD), "set-threshold") != 0) {
         return 15;
     }

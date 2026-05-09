@@ -55,6 +55,7 @@ int main(void)
         return 3;
     }
 
+    /* SET 成功后必须真正写回 config，并把 config_changed 置 true。 */
     command_init(&command);
     command.type = COMMAND_TYPE_SET_THRESHOLD;
     command.threshold = COMMAND_THRESHOLD_TEMP_WARNING_HIGH;
@@ -115,6 +116,7 @@ int main(void)
         return 9;
     }
 
+    /* handler 是 parser 后的安全边界：未知命令和空指针都统一返回 invalid-command。 */
     command_init(&command);
     command.type = COMMAND_TYPE_INVALID;
     result = command_handler_handle(&command, &config);

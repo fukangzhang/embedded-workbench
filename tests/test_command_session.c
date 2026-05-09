@@ -27,6 +27,7 @@ static command_session_t make_session(alarm_config_t *config, alarm_state_t *sta
 {
     command_session_t session;
 
+    /* 测试用一个小工厂函数，避免每个用例重复填 session 的三个指针。 */
     session.config = config;
     session.state = state;
     session.sample = sample;
@@ -42,6 +43,7 @@ static int test_invalid_command_response(void)
     command_session_t session = make_session(&config, &state, &sample);
     char response[128];
 
+    /* session 层即使遇到无法解析的命令，也要输出统一错误响应，方便串口端调试。 */
     if (expect_true(command_session_handle_line(&session, "NOPE\n", response, sizeof(response))) != 0 ||
         expect_string(response, "ERR result=invalid-command\n") != 0) {
         return 1;
@@ -58,6 +60,7 @@ static int test_status_response(void)
     command_session_t session = make_session(&config, &state, &sample);
     char response[256];
 
+    /* STATUS? 会产生两段文本：命令结果 + 当前状态快照。 */
     if (expect_true(command_session_handle_line(&session, "STATUS?\n", response, sizeof(response))) != 0 ||
         expect_string(
             response,
@@ -77,6 +80,7 @@ static int test_config_response(void)
     command_session_t session = make_session(&config, &state, &sample);
     char response[512];
 
+    /* CONFIG? 固定完整配置快照，避免以后字段顺序变化破坏终端/脚本解析。 */
     if (expect_true(command_session_handle_line(&session, "CONFIG?\n", response, sizeof(response))) != 0 ||
         expect_string(
             response,
@@ -96,6 +100,8 @@ static int test_set_updates_config_and_status(void)
     command_session_t session = make_session(&config, &state, &sample);
     char response[512];
 
+    /* SET 成功是 session 最复杂的路径：
+     * 它要更新配置、根据当前样本重算状态，并一次性返回 OK + CONFIG + STATUS。 */
     if (expect_true(command_session_handle_line(&session, "SET TEMP_WARN 360\n", response, sizeof(response))) != 0 ||
         expect_int(config.temperature_warning_high_c_x10, 360) != 0 ||
         expect_int(state, ALARM_STATE_WARNING) != 0 ||
@@ -118,6 +124,7 @@ static int test_small_output_buffer_fails(void)
     command_session_t session = make_session(&config, &state, &sample);
     char response[8];
 
+    /* response buffer 太小时，session 必须失败，不能留下截断协议文本。 */
     if (expect_false(command_session_handle_line(&session, "CONFIG?\n", response, sizeof(response))) != 0) {
         return 1;
     }
@@ -133,6 +140,7 @@ static int test_invalid_arguments_fail(void)
     command_session_t session = make_session(&config, &state, &sample);
     char response[128];
 
+    /* 公共入口的防御性检查：session、line、response、response_size 都不能非法。 */
     if (expect_false(command_session_handle_line(0, "STATUS?\n", response, sizeof(response))) != 0 ||
         expect_false(command_session_handle_line(&session, 0, response, sizeof(response))) != 0 ||
         expect_false(command_session_handle_line(&session, "STATUS?\n", 0, sizeof(response))) != 0 ||

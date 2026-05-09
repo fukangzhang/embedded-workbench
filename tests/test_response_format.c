@@ -35,7 +35,7 @@ int main(void)
     invalid_result = ok_result;
     invalid_result.result = COMMAND_RESULT_INVALID_VALUE;
 
-    /* 响应格式使用精确字符串断言，确保协议文本对上位机保持稳定。 */
+    /* 响应格式使用精确字符串断言，确保协议文本对上位机、脚本测试和文档保持稳定。 */
     if (expect_true(response_format_result(buffer, sizeof(buffer), &ok_result)) != 0 ||
         expect_string(buffer, "OK result=ok\n") != 0) {
         return 1;
@@ -51,10 +51,12 @@ int main(void)
         return 3;
     }
 
+    /* CONFIG 输出字段多，这里只验证能成功生成；完整字段顺序在 command_session 测试里覆盖。 */
     if (expect_true(response_format_config(buffer, sizeof(buffer), &config)) != 0) {
         return 4;
     }
 
+    /* 小缓冲区不能输出截断文本，必须返回 false。 */
     if (expect_false(response_format_status(buffer, 8u, ALARM_STATE_NORMAL, &sample)) != 0) {
         return 5;
     }
