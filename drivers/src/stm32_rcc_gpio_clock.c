@@ -1,5 +1,8 @@
 #include "embedded_workbench/stm32_rcc_gpio_clock.h"
 
+/* STM32 外设寄存器在使用前通常必须先打开 RCC 时钟。
+ * 本模块只处理“GPIO 端口名 -> RCC enable bit”的映射和置位。 */
+
 static bool text_equals(const char *left, const char *right)
 {
     if (left == 0 || right == 0) {

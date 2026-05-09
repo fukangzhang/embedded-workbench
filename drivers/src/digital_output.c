@@ -1,5 +1,8 @@
 #include "embedded_workbench/digital_output.h"
 
+/* digital_output 是通用数字输出抽象。
+ * 上层给它 board_pin_t 和 high/low，底层后端决定这是记录到测试 context，还是写 STM32 BSRR。 */
+
 static bool pin_is_valid(const board_pin_t *pin)
 {
     return pin != 0 &&

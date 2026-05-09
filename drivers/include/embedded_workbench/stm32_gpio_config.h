@@ -17,7 +17,9 @@ typedef struct {
 } stm32_gpio_registers_t;
 
 typedef enum {
+    /* 推挽输出：高低电平均由 MCU 主动驱动，是最常见的 LED/蜂鸣器输出方式。 */
     STM32_GPIO_OUTPUT_PUSH_PULL = 0,
+    /* 开漏输出：只能主动拉低，高电平通常依赖外部/内部上拉。 */
     STM32_GPIO_OUTPUT_OPEN_DRAIN = 1
 } stm32_gpio_output_type_t;
 
@@ -35,8 +37,11 @@ typedef enum {
 } stm32_gpio_pull_t;
 
 typedef struct {
+    /* 输出类型写入 OTYPER。 */
     stm32_gpio_output_type_t output_type;
+    /* 输出速度写入 OSPEEDR，影响边沿速度和 EMI。 */
     stm32_gpio_speed_t speed;
+    /* 上下拉写入 PUPDR。 */
     stm32_gpio_pull_t pull;
 } stm32_gpio_output_config_t;
 
@@ -48,10 +53,12 @@ typedef struct {
 } stm32_gpio_config_port_t;
 
 typedef struct {
+    /* 端口查找表；初始化后不复制表内容，所以调用者要保证表生命周期足够长。 */
     const stm32_gpio_config_port_t *ports;
     size_t port_count;
 } stm32_gpio_config_context_t;
 
+/* 默认输出配置采用保守安全值：推挽、低速、无上下拉。 */
 stm32_gpio_output_config_t stm32_gpio_output_config_default(void);
 bool stm32_gpio_config_init(
     stm32_gpio_config_context_t *context,

@@ -1,5 +1,8 @@
 #include "embedded_workbench/board_profile.h"
 
+/* board_profile 是 BSP 的事实表：这里描述“板上有什么、项目把哪些引脚当作输出”。
+ * 它不做寄存器写入，也不决定告警策略，只给驱动层提供板级映射。 */
+
 static const board_profile_t profiles[] = {
     /* 两块 NUCLEO 板先共用一组项目占位引脚，后续接真实外设时只需要更新 profile。 */
     {
