@@ -2,6 +2,10 @@
 
 #include <stddef.h>
 
+/* command_parser 是协议入口：它把一行文本命令拆成 command_t。
+ * 这里刻意不调用 strtok/atoi/strtol，是为了让模块在裸机或小 libc 场景下也可用，
+ * 同时让每个失败条件都能被测试精确覆盖。 */
+
 void command_init(command_t *command)
 {
     if (command == 0) {
@@ -55,7 +59,8 @@ static const char *read_token(const char *cursor, char *buffer, size_t buffer_si
 
     cursor = skip_spaces(cursor);
 
-    /* token 只读到空白或行尾；缓冲区不足时直接失败，避免截断后误识别命令。
+    /* token 是命令协议里以空格分隔的一段文本，例如 SET、TEMP_WARN、360。
+     * 它只读到空白或行尾；缓冲区不足时直接失败，避免截断后误识别命令。
      * index + 1u >= buffer_size 是为了给最后的 '\0' 留一个位置。 */
     while (!is_space_char(*cursor) && !is_line_end(*cursor)) {
         if (index + 1u >= buffer_size) {
@@ -73,6 +78,8 @@ static const char *read_token(const char *cursor, char *buffer, size_t buffer_si
 
 static bool has_only_line_end_after_spaces(const char *cursor)
 {
+    /* 命令参数读完后必须确认尾部没有多余字符。
+     * 例如 "STATUS? xxx" 应该失败，而不是被宽松地当作 STATUS?。 */
     cursor = skip_spaces(cursor);
     return is_line_end(*cursor);
 }
@@ -127,7 +134,9 @@ static bool parse_int32(const char *cursor, int32_t *value, const char **end_out
 
         has_digit = true;
 
-        /* 每加入一位前先检查边界，保证 2147483647 和 -2147483648 都能被正确处理。 */
+        /* 每加入一位前先检查边界。
+         * 正数最大值是 2147483647；负数允许先保存到 2147483648，
+         * 因为 INT32_MIN 是 -2147483648，比正数最大值多 1。 */
         if (!negative && parsed > (2147483647u - digit) / 10u) {
             return false;
         }
@@ -166,7 +175,8 @@ bool command_parse(const char *line, command_t *command)
 
     command_init(command);
 
-    /* 第一个 token 决定命令类型；后续分支再按命令类型读取剩余参数。 */
+    /* 第一个 token 决定命令类型；后续分支再按命令类型读取剩余参数。
+     * 这种写法比“先全部切碎再解释”更适合小协议：每条命令只读自己需要的字段。 */
     cursor = read_token(cursor, token, sizeof(token));
     if (cursor == 0 || token[0] == '\0') {
         return false;

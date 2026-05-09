@@ -1,5 +1,9 @@
 #include "embedded_workbench/command_handler.h"
 
+/* command_handler 位于 parser 和 session 中间：
+ * parser 只负责识别命令文本，handler 负责判断命令能否作用到当前 alarm_config。
+ * 它不直接输出字符串，这样同一套业务结果可以被串口、host_sim 或测试复用。 */
+
 static bool is_int16_value(int32_t value)
 {
     return value >= -32768 && value <= 32767;
@@ -19,6 +23,8 @@ static command_handler_result_t make_result(command_result_t result)
 {
     command_handler_result_t handler_result;
 
+    /* 所有标志默认关闭，只在对应命令成功时打开。
+     * 这样错误结果不会意外触发 status/config 等后续响应。 */
     handler_result.result = result;
     handler_result.config_changed = false;
     handler_result.status_requested = false;

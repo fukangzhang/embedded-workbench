@@ -7,9 +7,12 @@
 #include "embedded_workbench/response_format.h"
 
 typedef struct {
+    /* response 可能需要由多段文本组成，例如 SET 成功后同时回：
+     * OK、CONFIG、STATUS。session_writer_t 记录当前已经写到哪里。 */
     char *buffer;
     size_t capacity;
     size_t used;
+    /* ok 一旦变成 false，表示缓冲区不足或 formatter 失败，后续追加会停止。 */
     bool ok;
 } session_writer_t;
 
@@ -84,6 +87,8 @@ static bool writer_append_text(session_writer_t *writer, const char *text)
 
 static bool format_result_adapter(char *buffer, size_t buffer_size, void *context)
 {
+    /* writer_append_formatted 需要统一的 void* formatter 形状。
+     * adapter 只做类型转换，把真实 formatter 接到通用 writer 上。 */
     return response_format_result(buffer, buffer_size, (const command_handler_result_t *)context);
 }
 
@@ -177,6 +182,8 @@ bool command_session_handle_line(
     }
 
     if (result.alarm_clear_requested) {
+        /* 目前 CLEAR_ALARM 还没有真实锁存告警状态可清除。
+         * 先保留明确响应，后续接入人工确认逻辑时可以在这里扩展。 */
         if (!writer_append_text(&writer, "clear_alarm=requested\n")) {
             return false;
         }
