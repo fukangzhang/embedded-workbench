@@ -187,6 +187,10 @@ stm32f401re_gpio_bindings
 
    先确认使用的是 `build-fw-real-usart2-command/embedded_firmware.elf`，串口参数为 `9600 8N1`，并且终端发送了 `STATUS?` 加换行。再检查 PA2/PA3 是否走 ST-LINK VCP，对应 `USART2_TX/USART2_RX`。
 
+8. 想在没有传感器时触发 warning
+
+   可以发送 `SAMPLE 360 600 250 20` 加换行，再发送 `STATUS?`。如果串口链路正常，应看到 `STATUS state=warning` 和 `indicator=slow_blink`。这只是手工注入样本，不代表真实传感器已经接入。
+
 ## 本次还不验证什么
 
 这份清单不证明：

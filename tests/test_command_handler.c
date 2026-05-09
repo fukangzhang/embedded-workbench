@@ -26,13 +26,14 @@ static int expect_string(const char *actual, const char *expected)
 int main(void)
 {
     alarm_config_t config = alarm_config_default();
+    sensor_sample_t sample = sensor_sample_make(250, 500u, 300u, 20u);
     command_t command;
     command_handler_result_t result;
 
     /* 查询类命令只设置请求标志，不应该改变配置。 */
     command_init(&command);
     command.type = COMMAND_TYPE_GET_STATUS;
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     if (expect_int(result.result, COMMAND_RESULT_OK) != 0 ||
         expect_true(result.status_requested) != 0 ||
         expect_false(result.config_changed) != 0) {
@@ -41,7 +42,7 @@ int main(void)
 
     command_init(&command);
     command.type = COMMAND_TYPE_GET_CONFIG;
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     if (expect_int(result.result, COMMAND_RESULT_OK) != 0 ||
         expect_true(result.config_requested) != 0) {
         return 2;
@@ -49,7 +50,7 @@ int main(void)
 
     command_init(&command);
     command.type = COMMAND_TYPE_CLEAR_ALARM;
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     if (expect_int(result.result, COMMAND_RESULT_OK) != 0 ||
         expect_true(result.alarm_clear_requested) != 0) {
         return 3;
@@ -60,7 +61,7 @@ int main(void)
     command.type = COMMAND_TYPE_SET_THRESHOLD;
     command.threshold = COMMAND_THRESHOLD_TEMP_WARNING_HIGH;
     command.value = 360;
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     if (expect_int(result.result, COMMAND_RESULT_OK) != 0 ||
         expect_true(result.config_changed) != 0 ||
         expect_int(config.temperature_warning_high_c_x10, 360) != 0) {
@@ -71,7 +72,7 @@ int main(void)
     command.type = COMMAND_TYPE_SET_THRESHOLD;
     command.threshold = COMMAND_THRESHOLD_SMOKE_ALARM;
     command.value = 700;
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     if (expect_int(result.result, COMMAND_RESULT_OK) != 0 ||
         expect_int(config.smoke_alarm_ppm, 700) != 0) {
         return 5;
@@ -82,7 +83,7 @@ int main(void)
     command.type = COMMAND_TYPE_SET_THRESHOLD;
     command.threshold = COMMAND_THRESHOLD_TEMP_WARNING_HIGH;
     command.value = 500;
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     if (expect_int(result.result, COMMAND_RESULT_INVALID_VALUE) != 0 ||
         expect_int(config.temperature_warning_high_c_x10, 360) != 0) {
         return 6;
@@ -93,7 +94,7 @@ int main(void)
     command.type = COMMAND_TYPE_SET_THRESHOLD;
     command.threshold = COMMAND_THRESHOLD_HUMIDITY_WARNING_HIGH;
     command.value = -1;
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     if (expect_int(result.result, COMMAND_RESULT_INVALID_VALUE) != 0) {
         return 7;
     }
@@ -102,7 +103,7 @@ int main(void)
     command.type = COMMAND_TYPE_SET_THRESHOLD;
     command.threshold = COMMAND_THRESHOLD_SMOKE_WARNING;
     command.value = 70000;
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     if (expect_int(result.result, COMMAND_RESULT_INVALID_VALUE) != 0) {
         return 8;
     }
@@ -111,29 +112,86 @@ int main(void)
     command.type = COMMAND_TYPE_SET_THRESHOLD;
     command.threshold = COMMAND_THRESHOLD_LIGHT_WARNING_LOW;
     command.value = -1;
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     if (expect_int(result.result, COMMAND_RESULT_INVALID_VALUE) != 0) {
         return 9;
+    }
+
+    command_init(&command);
+    command.type = COMMAND_TYPE_SET_SAMPLE;
+    command.sample_temperature_c_x10 = 365;
+    command.sample_humidity_rh_x10 = 610;
+    command.sample_light_lux = 250;
+    command.sample_smoke_ppm = 30;
+    result = command_handler_handle(&command, &config, &sample);
+    if (expect_int(result.result, COMMAND_RESULT_OK) != 0 ||
+        expect_true(result.sample_changed) != 0 ||
+        expect_int(sample.temperature_c_x10, 365) != 0 ||
+        expect_int(sample.humidity_rh_x10, 610) != 0 ||
+        expect_int((int)sample.light_lux, 250) != 0 ||
+        expect_int(sample.smoke_ppm, 30) != 0) {
+        return 10;
+    }
+
+    command_init(&command);
+    command.type = COMMAND_TYPE_SET_SAMPLE;
+    command.sample_temperature_c_x10 = 900;
+    command.sample_humidity_rh_x10 = 610;
+    command.sample_light_lux = 250;
+    command.sample_smoke_ppm = 30;
+    result = command_handler_handle(&command, &config, &sample);
+    if (expect_int(result.result, COMMAND_RESULT_INVALID_VALUE) != 0 ||
+        expect_int(sample.temperature_c_x10, 365) != 0) {
+        return 11;
+    }
+
+    command_init(&command);
+    command.type = COMMAND_TYPE_SET_SAMPLE;
+    command.sample_temperature_c_x10 = 250;
+    command.sample_humidity_rh_x10 = -1;
+    command.sample_light_lux = 250;
+    command.sample_smoke_ppm = 30;
+    result = command_handler_handle(&command, &config, &sample);
+    if (expect_int(result.result, COMMAND_RESULT_INVALID_VALUE) != 0 ||
+        expect_int(sample.humidity_rh_x10, 610) != 0) {
+        return 12;
+    }
+
+    sample = sensor_sample_make(900, 500u, 300u, 20u);
+    command_init(&command);
+    command.type = COMMAND_TYPE_SET_SAMPLE;
+    command.sample_temperature_c_x10 = 250;
+    command.sample_humidity_rh_x10 = 500;
+    command.sample_light_lux = 300;
+    command.sample_smoke_ppm = 20;
+    result = command_handler_handle(&command, &config, &sample);
+    if (expect_int(result.result, COMMAND_RESULT_OK) != 0 ||
+        expect_int(sample.temperature_c_x10, 250) != 0) {
+        return 13;
     }
 
     /* handler 是 parser 后的安全边界：未知命令和空指针都统一返回 invalid-command。 */
     command_init(&command);
     command.type = COMMAND_TYPE_INVALID;
-    result = command_handler_handle(&command, &config);
+    result = command_handler_handle(&command, &config, &sample);
     if (expect_int(result.result, COMMAND_RESULT_INVALID_COMMAND) != 0) {
-        return 10;
+        return 14;
     }
 
-    if (expect_int(command_handler_handle(0, &config).result, COMMAND_RESULT_INVALID_COMMAND) != 0) {
-        return 11;
+    if (expect_int(command_handler_handle(0, &config, &sample).result, COMMAND_RESULT_INVALID_COMMAND) != 0) {
+        return 15;
     }
 
-    if (expect_int(command_handler_handle(&command, 0).result, COMMAND_RESULT_INVALID_COMMAND) != 0) {
-        return 12;
+    if (expect_int(command_handler_handle(&command, 0, &sample).result, COMMAND_RESULT_INVALID_COMMAND) != 0) {
+        return 16;
+    }
+
+    if (expect_int(command_handler_handle(&command, &config, 0).result, COMMAND_RESULT_INVALID_COMMAND) != 0) {
+        return 17;
     }
 
     if (expect_string(command_result_name(COMMAND_RESULT_INVALID_VALUE), "invalid-value") != 0) {
-        return 13;
+        return 18;
     }
 
     return 0;

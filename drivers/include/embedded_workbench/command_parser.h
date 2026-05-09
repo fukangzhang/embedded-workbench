@@ -14,7 +14,9 @@ typedef enum {
     /* SET <threshold> <value>：修改一个告警阈值。 */
     COMMAND_TYPE_SET_THRESHOLD = 3,
     /* CLEAR_ALARM：预留给后续“人工清除/确认告警”的命令。 */
-    COMMAND_TYPE_CLEAR_ALARM = 4
+    COMMAND_TYPE_CLEAR_ALARM = 4,
+    /* SAMPLE <temp> <hum> <light> <smoke>：在无真实传感器时注入一帧样本。 */
+    COMMAND_TYPE_SET_SAMPLE = 5
 } command_type_t;
 
 typedef enum {
@@ -37,6 +39,12 @@ typedef struct {
     command_threshold_t threshold;
     /* SET 命令的数值参数，先用 int32_t 接住，再由 handler 检查具体字段范围。 */
     int32_t value;
+    /* SAMPLE 命令的 4 个字段也先用 int32_t 接住。
+     * handler 再判断它们能否安全落到 sensor_sample_t 的具体类型和物理范围。 */
+    int32_t sample_temperature_c_x10;
+    int32_t sample_humidity_rh_x10;
+    int32_t sample_light_lux;
+    int32_t sample_smoke_ppm;
 } command_t;
 
 /* 初始化命令对象。
@@ -49,6 +57,7 @@ void command_init(command_t *command);
  * - CONFIG?
  * - CLEAR_ALARM
  * - SET TEMP_WARN 360
+ * - SAMPLE 360 600 250 20
  *
  * 解析器只负责“文本 -> command_t”，不会修改配置，也不会生成响应。
  * 解析失败时保持 INVALID 语义，避免半解析命令被后续逻辑误用。 */

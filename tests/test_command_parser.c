@@ -71,43 +71,68 @@ int main(void)
         return 7;
     }
 
-    if (expect_false(command_parse("STATUS? NOW", &command)) != 0) {
+    if (expect_true(command_parse("SAMPLE 360 600 250 20", &command)) != 0 ||
+        expect_int(command.type, COMMAND_TYPE_SET_SAMPLE) != 0 ||
+        expect_int(command.sample_temperature_c_x10, 360) != 0 ||
+        expect_int(command.sample_humidity_rh_x10, 600) != 0 ||
+        expect_int(command.sample_light_lux, 250) != 0 ||
+        expect_int(command.sample_smoke_ppm, 20) != 0) {
         return 8;
+    }
+
+    if (expect_false(command_parse("STATUS? NOW", &command)) != 0) {
+        return 9;
     }
 
     /* 下面这些失败用例分别覆盖未知阈值、非数字、整数溢出和空指针。 */
     if (expect_false(command_parse("SET UNKNOWN 1", &command)) != 0) {
-        return 9;
-    }
-
-    if (expect_false(command_parse("SET TEMP_WARN abc", &command)) != 0) {
         return 10;
     }
 
-    if (expect_false(command_parse("SET TEMP_WARN 2147483648", &command)) != 0) {
+    if (expect_false(command_parse("SET TEMP_WARN abc", &command)) != 0) {
         return 11;
+    }
+
+    if (expect_false(command_parse("SET TEMP_WARN 2147483648", &command)) != 0) {
+        return 12;
     }
 
     /* 这两个边界值刚好越过 int32 范围，解析器必须拒绝而不是溢出。 */
     if (expect_false(command_parse("SET TEMP_WARN -2147483649", &command)) != 0) {
-        return 12;
-    }
-
-    if (expect_false(command_parse(0, &command)) != 0) {
         return 13;
     }
 
-    if (expect_false(command_parse("STATUS?", 0)) != 0) {
+    if (expect_false(command_parse("SAMPLE 250 500 300", &command)) != 0) {
         return 14;
+    }
+
+    if (expect_false(command_parse("SAMPLE 250 500 300 nope", &command)) != 0) {
+        return 15;
+    }
+
+    if (expect_false(command_parse("SAMPLE 250 500 300 20 extra", &command)) != 0) {
+        return 16;
+    }
+
+    if (expect_false(command_parse(0, &command)) != 0) {
+        return 17;
+    }
+
+    if (expect_false(command_parse("STATUS?", 0)) != 0) {
+        return 18;
     }
 
     /* name 函数输出会出现在日志/调试里，也需要固定下来。 */
     if (expect_string(command_type_name(COMMAND_TYPE_SET_THRESHOLD), "set-threshold") != 0) {
-        return 15;
+        return 19;
+    }
+
+    if (expect_string(command_type_name(COMMAND_TYPE_SET_SAMPLE), "set-sample") != 0) {
+        return 20;
     }
 
     if (expect_string(command_threshold_name(COMMAND_THRESHOLD_SMOKE_ALARM), "smoke-alarm") != 0) {
-        return 16;
+        return 21;
     }
 
     return 0;

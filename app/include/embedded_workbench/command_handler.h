@@ -5,6 +5,7 @@
 
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/command_parser.h"
+#include "embedded_workbench/sensor_sample.h"
 
 typedef enum {
     /* 命令合法并已被 handler 接受。 */
@@ -24,6 +25,8 @@ typedef struct {
     bool status_requested;
     /* CONFIG? 同理，由 session 决定如何追加配置响应。 */
     bool config_requested;
+    /* SAMPLE 成功提交新样本时为 true；session 会据此重算状态。 */
+    bool sample_changed;
     /* CLEAR_ALARM 当前是预留动作，session 会回显 clear_alarm=requested。 */
     bool alarm_clear_requested;
 } command_handler_result_t;
@@ -32,7 +35,8 @@ typedef struct {
  * 这个层负责修改配置或设置请求标志，不直接生成串口响应文本。 */
 command_handler_result_t command_handler_handle(
     const command_t *command,
-    alarm_config_t *config);
+    alarm_config_t *config,
+    sensor_sample_t *sample);
 const char *command_result_name(command_result_t result);
 
 #endif

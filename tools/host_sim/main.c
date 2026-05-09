@@ -69,7 +69,7 @@ static bool stdout_write(void *context, const char *data, size_t length)
     return fwrite(data, 1u, length, stdout) == length;
 }
 
-static int run_script_mode(alarm_config_t *config, alarm_state_t *state, const sensor_sample_t *sample)
+static int run_script_mode(alarm_config_t *config, alarm_state_t *state, sensor_sample_t *sample)
 {
     serial_command_service_t service;
     char rx_buffer[128];
