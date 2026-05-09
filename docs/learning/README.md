@@ -347,6 +347,7 @@
 - `2026-05-09-FreeRTOS命令IngressHook.md`
 - `2026-05-09-FreeRTOS真实USART2命令Reader.md`
 - `2026-05-09-FreeRTOS真实USART2响应Writer.md`
+- `2026-05-09-FreeRTOSSAMPLE命令转发.md`
 - `2026-05-09-FreeRTOS真实USART2IO板上验证入口.md`
 - `2026-05-09-FreeRTOS真实USART2VCP验证脚本.md`
 - `2026-05-09-FreeRTOS配置更新队列.md`
@@ -392,6 +393,7 @@
 - `communication_task` 如何通过可选 reader hook 把串口字节入口接到 `command_queue`
 - FreeRTOS 固件路径如何通过默认关闭开关把真实 USART2 reader 绑定到 command ingress hook
 - `communication_task` 如何通过可选 writer hook 把 `response_queue` 文本写回 USART2
+- `SAMPLE` 命令如何从通信任务转发到 `sensor_sample_queue`，让环境处理任务也看到手工注入样本
 - 为什么板上验证要使用 scheduler + reader + writer 同时开启的专用固件构建入口
 - VCP 验证脚本如何固定命令序列，并把串口响应变成可保存的验证记录
 - `config_update_queue` 如何把 `SET` 命令产生的新配置快照同步给环境处理任务
