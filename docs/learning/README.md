@@ -56,6 +56,7 @@
 先看：
 
 - `2026-05-08-传感器数据模型.md`
+- `2026-05-09-传感器样本滤波.md`
 - `2026-05-09-传感器来源接口.md`
 - `2026-05-09-序列传感器来源.md`
 - `2026-05-09-传感器采集步骤.md`
@@ -71,6 +72,8 @@
 
 - `drivers/include/embedded_workbench/sensor_sample.h`
 - `drivers/src/sensor_sample.c`
+- `drivers/include/embedded_workbench/sensor_sample_filter.h`
+- `drivers/src/sensor_sample_filter.c`
 - `drivers/include/embedded_workbench/sensor_source.h`
 - `drivers/src/sensor_source.c`
 - `drivers/include/embedded_workbench/sequence_sensor_source.h`
@@ -92,6 +95,7 @@
 - `app/src/response_format.c`
 - `tools/host_sim/main.c`
 - `tests/test_sensor_sample.c`
+- `tests/test_sensor_sample_filter.c`
 - `tests/test_sensor_source.c`
 - `tests/test_sequence_sensor_source.c`
 - `tests/test_sensor_acquisition.c`
@@ -107,6 +111,7 @@
 
 - 一个传感器样本里有哪些字段
 - 为什么要校验传感器数据范围
+- `sensor_sample_filter` 如何用整数权重平滑样本，并且为什么当前还没接入运行链路
 - `sensor_source` 为什么只负责读取 sample，不负责判断告警
 - `sequence_sensor_source` 如何让 host_sim demo 通过统一 source 接口读取样本
 - `sensor_acquisition` 如何把 sample 来源接到后续提交管道
