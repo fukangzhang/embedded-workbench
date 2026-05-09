@@ -8,6 +8,7 @@ sensor_sample_t sensor_sample_make(
 {
     sensor_sample_t sample;
 
+    /* 用工厂函数创建结构体，调用处就不用知道字段赋值顺序。 */
     sample.temperature_c_x10 = temperature_c_x10;
     sample.humidity_rh_x10 = humidity_rh_x10;
     sample.light_lux = light_lux;
@@ -19,6 +20,7 @@ sensor_sample_t sensor_sample_make(
 bool sensor_sample_is_valid(const sensor_sample_t *sample)
 {
     if (sample == 0) {
+        /* C 里 0 常用来表示空指针；空 sample 没有任何字段可检查。 */
         return false;
     }
 
@@ -30,6 +32,7 @@ bool sensor_sample_is_valid(const sensor_sample_t *sample)
 
     if (sample->humidity_rh_x10 < SENSOR_HUMIDITY_MIN_RH_X10 ||
         sample->humidity_rh_x10 > SENSOR_HUMIDITY_MAX_RH_X10) {
+        /* uint16_t 不会小于 0，但保留最小值判断能让“范围检查”保持对称。 */
         return false;
     }
 
