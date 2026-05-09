@@ -171,6 +171,7 @@
 - `2026-05-08-STM32GPIO初始化配置.md`
 - `2026-05-09-STM32GPIOAlternateFunction.md`
 - `2026-05-08-STM32RCCGPIO时钟使能.md`
+- `2026-05-09-STM32RCCUSART时钟.md`
 - `2026-05-09-STM32USART寄存器Helper.md`
 - `2026-05-08-STM32板级GPIO输出初始化.md`
 - `2026-05-08-STM32F401REGPIO地址绑定.md`
@@ -195,6 +196,8 @@
 - `drivers/src/stm32_gpio_config.c`
 - `drivers/include/embedded_workbench/stm32_rcc_gpio_clock.h`
 - `drivers/src/stm32_rcc_gpio_clock.c`
+- `drivers/include/embedded_workbench/stm32_rcc_usart_clock.h`
+- `drivers/src/stm32_rcc_usart_clock.c`
 - `drivers/include/embedded_workbench/stm32_usart.h`
 - `drivers/src/stm32_usart.c`
 - `drivers/include/embedded_workbench/stm32_board_gpio_init.h`
@@ -215,6 +218,7 @@
 - `tests/test_stm32_gpio_output.c`
 - `tests/test_stm32_gpio_config.c`
 - `tests/test_stm32_rcc_gpio_clock.c`
+- `tests/test_stm32_rcc_usart_clock.c`
 - `tests/test_stm32_usart.c`
 - `tests/test_stm32_board_gpio_init.c`
 - `tests/test_stm32f401re_gpio_bindings.c`
@@ -229,6 +233,7 @@
 - `stm32_gpio_config` 如何配置 `MODER/OTYPER/OSPEEDR/PUPDR`
 - `stm32_gpio_config` 如何通过 `AFRL/AFRH` 把 PA2/PA3 这类引脚切到 alternate function
 - `stm32_rcc_gpio_clock` 为什么要先打开 GPIO 端口时钟
+- `stm32_rcc_usart_clock` 为什么要单独打开 USART 外设时钟
 - `stm32_usart` 如何配置 BRR、8N1、RE/TE/UE，并轮询 RXNE/TXE
 - `stm32_board_gpio_init` 如何按 profile 串起 RCC 和 GPIO 配置
 - `stm32f401re_gpio_bindings` 为什么只提供地址绑定，不直接访问硬件
