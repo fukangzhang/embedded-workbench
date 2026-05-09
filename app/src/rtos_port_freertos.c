@@ -4,6 +4,7 @@
 #include "embedded_workbench/alarm_output_timing.h"
 #include "embedded_workbench/alarm_state.h"
 #include "embedded_workbench/rtos_task_model.h"
+#include "embedded_workbench/sensor_source.h"
 
 /* rtos_port_freertos 把项目自己的 rtos_port_t 接到 FreeRTOS。
  * 这个文件是“真实 RTOS 后端”，负责创建队列、创建任务、在任务间转发消息。 */
@@ -67,10 +68,15 @@ static void delay_for_descriptor(rtos_task_id_t id)
 static void sensor_acquire_task(void *parameter)
 {
     freertos_rtos_port_context_t *context = (freertos_rtos_port_context_t *)parameter;
+    sensor_sample_t sample;
 
     for (;;) {
-        /* 采集任务暂时只保留周期骨架，后续会在这里读取传感器并发送 sample queue。 */
-        (void)context;
+        /* source 是可选的：早期固件可以只验证任务创建；配置 source 后才真正产生 sample。 */
+        if (context != 0 &&
+            context->sensor_sample_queue != 0 &&
+            sensor_source_read(context->sensor_source, &sample)) {
+            (void)xQueueSend(context->sensor_sample_queue, &sample, (TickType_t)0);
+        }
         delay_for_descriptor(RTOS_TASK_SENSOR_ACQUIRE);
     }
 }
