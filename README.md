@@ -40,7 +40,7 @@
 
 - 主机侧 CMake 工程、主机仿真程序 `host_sim`、24 个主机测试和 GitHub CI
 - 传感器采样模型、告警状态机、告警输出策略、闪烁节拍和数字输出抽象
-- 文本命令链路：解析命令、处理配置、格式化响应、命令会话、脚本化 host_sim 输入
+- 文本命令链路：串口行缓冲、串口命令服务、解析命令、处理配置、格式化响应、命令会话、脚本化 host_sim 输入
 - STM32 固件骨架：启动文件、freestanding libc、基础固件构建、真实 GPIO 初始化开关
 - BSP/driver 边界：板级 profile、GPIO 寄存器配置、RCC 时钟、STM32F401RE 地址绑定
 - FreeRTOS 骨架：任务模型、RTOS port 接口、FreeRTOS task/queue 创建、告警事件流和输出节拍接入
@@ -69,10 +69,11 @@
 
 4. 串口命令链路：
    - `docs/learning/2026-05-08-串口行缓冲模块.md`
+   - `docs/learning/2026-05-09-串口命令服务.md`
    - `docs/learning/2026-05-08-命令解析.md`
    - `docs/learning/2026-05-08-命令处理与配置应用.md`
    - `docs/learning/2026-05-08-命令会话模块.md`
-   - 对应代码：`drivers/src/serial_line.c`、`drivers/src/command_parser.c`、`app/src/command_handler.c`、`app/src/command_session.c`
+   - 对应代码：`drivers/src/serial_line.c`、`app/src/serial_command_service.c`、`drivers/src/command_parser.c`、`app/src/command_handler.c`、`app/src/command_session.c`
 
 5. STM32 和硬件边界：
    - `hardware/nucleo-f401re-bringup.md`
@@ -103,7 +104,7 @@
 近期优先级建议如下：
 
 1. 真实 NUCLEO-F401RE bring-up：烧录固件、确认 GPIO 输出和失败定位流程
-2. UART 接入：把真实串口字节接到 `serial_line` 和 command session
+2. UART 接入：把真实串口字节接到 `serial_command_service`
 3. 传感器驱动抽象：从固定 sample 走向模拟/真实传感器输入
 4. FreeRTOS 运行闭环：采集、处理、通信、输出任务之间跑通真实队列
 5. 协议扩展：在串口命令稳定后，再考虑 `Modbus`、`CAN` 或更完整的 telemetry

@@ -105,6 +105,7 @@
 - `2026-05-08-命令解析.md`
 - `2026-05-08-串口行缓冲模块.md`
 - `2026-05-08-命令会话模块.md`
+- `2026-05-09-串口命令服务.md`
 - `2026-05-08-命令处理与配置应用.md`
 - `2026-05-08-响应格式规范.md`
 - `2026-05-08-主机仿真交互闭环.md`
@@ -117,6 +118,8 @@
 - `drivers/src/serial_line.c`
 - `app/include/embedded_workbench/command_session.h`
 - `app/src/command_session.c`
+- `app/include/embedded_workbench/serial_command_service.h`
+- `app/src/serial_command_service.c`
 - `app/include/embedded_workbench/command_handler.h`
 - `app/src/command_handler.c`
 - `app/include/embedded_workbench/response_format.h`
@@ -125,12 +128,14 @@
 - `tests/test_command_parser.c`
 - `tests/test_command_handler.c`
 - `tests/test_response_format.c`
+- `tests/test_serial_command_service.c`
 
 看完要能解释：
 
 - 文本命令怎么被解析成结构体
 - 串口字节流为什么要先组装成一行，再交给命令解析器
 - 完整命令行如何被统一处理成一段响应文本
+- 串口命令服务如何把逐字节输入、行缓冲、命令会话和 writer callback 接起来
 - 配置命令为什么不直接散落在 main 函数里处理
 - 响应格式为什么要单独模块化
 - 主机仿真如何串起“输入命令 -> 处理 -> 输出响应”
@@ -320,6 +325,7 @@ sensor_sample
   -> board_digital_output
 
 serial_line
+  -> serial_command_service
   -> command_session
   -> command_parser
   -> command_handler
