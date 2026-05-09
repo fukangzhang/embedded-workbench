@@ -15,12 +15,15 @@ typedef bool (*alarm_output_sink_set_enabled_fn)(void *context, bool enabled);
 /* sink 是应用层和具体硬件输出之间的适配接口。
  * app 只依赖这些函数指针，不需要知道 LED、蜂鸣器或执行器最终接在哪个引脚。 */
 typedef struct {
+    /* set_indicator 接收模式和周期，由具体后端决定如何落到 LED/GPIO。 */
     alarm_output_sink_set_indicator_fn set_indicator;
+    /* 蜂鸣器和执行器都是开关型输出，所以复用 enabled 函数形状。 */
     alarm_output_sink_set_enabled_fn set_buzzer;
     alarm_output_sink_set_enabled_fn set_actuator;
 } alarm_output_sink_ops_t;
 
 typedef struct {
+    /* ops 是一组函数指针，类似“接口”；context 是这组函数需要的私有数据。 */
     const alarm_output_sink_ops_t *ops;
     void *context;
 } alarm_output_sink_t;
