@@ -38,6 +38,7 @@ static stm32_usart_serial_io_context_t firmware_usart2_serial_io = {0};
 static serial_command_service_t firmware_usart2_command_service = {0};
 static bool firmware_usart2_command_loop_ready = false;
 
+static stm32_usart_serial_io_context_t firmware_freertos_usart2_serial_io = {0};
 static alarm_config_t firmware_usart2_command_config;
 static alarm_state_t firmware_usart2_command_state = ALARM_STATE_NORMAL;
 static sensor_sample_t firmware_usart2_command_sample;
@@ -420,6 +421,56 @@ static const sensor_sample_t firmware_freertos_demo_samples[] = {
 static sequence_sensor_source_t firmware_freertos_sequence_source = {0};
 static sensor_source_t firmware_freertos_sensor_source = {0};
 
+#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER)
+static bool firmware_stm32f401re_freertos_usart2_command_reader_init(void)
+{
+    stm32_rcc_gpio_clock_context_t gpio_clock_context;
+    stm32_gpio_config_context_t gpio_context;
+    stm32_rcc_usart_clock_context_t usart_clock_context;
+    size_t gpio_clock_count = 0u;
+    size_t gpio_port_count = 0u;
+    size_t usart_clock_count = 0u;
+    const stm32_rcc_gpio_clock_port_t *gpio_clock_ports =
+        stm32f401re_gpio_clock_ports(&gpio_clock_count);
+    const stm32_gpio_config_port_t *gpio_ports =
+        stm32f401re_gpio_config_ports(&gpio_port_count);
+    const stm32_rcc_usart_clock_peripheral_t *usart_clock_peripherals =
+        stm32f401re_usart_clock_peripherals(&usart_clock_count);
+    stm32_usart_registers_t *usart2_registers = stm32f401re_usart2_registers();
+    stm32_usart_config_t usart_config = stm32_usart_config_default(SystemCoreClock, 9600u);
+
+    /* FreeRTOS reader 使用独立 serial I/O context。
+     * 现有 USART2 自检会临时把 firmware_usart2_serial_io 指向模拟寄存器，不能复用。 */
+    if (!stm32_rcc_gpio_clock_init(
+            &gpio_clock_context,
+            stm32f401re_rcc_ahb1enr(),
+            gpio_clock_ports,
+            gpio_clock_count) ||
+        !stm32_gpio_config_init(&gpio_context, gpio_ports, gpio_port_count) ||
+        !stm32_rcc_usart_clock_init(
+            &usart_clock_context,
+            stm32f401re_rcc_apb1enr(),
+            usart_clock_peripherals,
+            usart_clock_count) ||
+        !stm32_board_usart2_init(
+            &gpio_clock_context,
+            &gpio_context,
+            &usart_clock_context,
+            usart2_registers,
+            &usart_config) ||
+        !stm32_usart_serial_io_init(
+            &firmware_freertos_usart2_serial_io,
+            usart2_registers,
+            STM32_USART_SERIAL_IO_DEFAULT_MAX_POLL_ATTEMPTS)) {
+        return false;
+    }
+
+    firmware_rtos_context.command_read = stm32_usart_serial_io_read_byte;
+    firmware_rtos_context.command_read_context = &firmware_freertos_usart2_serial_io;
+    return true;
+}
+#endif
+
 static bool firmware_freertos_runtime_context_init(void)
 {
     size_t sample_count = sizeof(firmware_freertos_demo_samples) / sizeof(firmware_freertos_demo_samples[0]);
@@ -438,6 +489,12 @@ static bool firmware_freertos_runtime_context_init(void)
      * 输出任务从这里拿 sink，所以这些字段必须在 vTaskStartScheduler 前准备好。 */
     firmware_rtos_context.sensor_source = &firmware_freertos_sensor_source;
     firmware_rtos_context.alarm_output_sink = &firmware_alarm_output_sink;
+
+#if defined(EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER)
+    if (!firmware_stm32f401re_freertos_usart2_command_reader_init()) {
+        return false;
+    }
+#endif
 
     return sensor_source_is_valid(&firmware_freertos_sensor_source);
 }

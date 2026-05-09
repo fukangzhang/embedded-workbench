@@ -33,7 +33,7 @@ reader callback
 
 ## 为什么 reader hook 是可选的？
 
-现在还没有把真实 USART2 reader 接进 FreeRTOS scheduler 路径。
+真实 USART2 reader 已经可以通过默认关闭的 `EW_FIRMWARE_USE_REAL_STM32_USART2_FREERTOS_COMMAND_READER` 开关接入 FreeRTOS 路径。
 
 如果强行要求 reader 必须存在，就会破坏当前已有的 FreeRTOS 构建和队列自检。可选 hook 的好处是：
 
@@ -67,11 +67,10 @@ freertos_submit_ingress_command
 
 ## 当前还不是完整真实串口闭环
 
-这一层只是把 hook 接到 communication task。
+这一层已经把 hook 接到 communication task，并且后续补了真实 USART2 reader 绑定。
 
 还缺：
 
-- 在固件 FreeRTOS 路径中绑定真实 USART2 reader。
 - 把 `response_queue` 的文本真正写回 USART2。
 - 板上启动 scheduler 后观察串口输入/输出。
 
