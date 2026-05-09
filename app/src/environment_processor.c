@@ -54,6 +54,18 @@ bool environment_processor_process_sample(
     return true;
 }
 
+bool environment_processor_update_config(
+    environment_processor_t *processor,
+    const alarm_config_t *config)
+{
+    if (processor == 0 || !alarm_config_is_valid(config)) {
+        return false;
+    }
+
+    processor->config = *config;
+    return true;
+}
+
 alarm_state_t environment_processor_current_state(const environment_processor_t *processor)
 {
     if (processor == 0) {
