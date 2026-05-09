@@ -1,17 +1,47 @@
 #include "embedded_workbench/sensor_sample_filter.h"
 
+static uint32_t scale_delta_magnitude(uint32_t magnitude, uint16_t numerator, uint16_t denominator)
+{
+    uint32_t whole = magnitude / (uint32_t)denominator;
+    uint32_t remainder = magnitude % (uint32_t)denominator;
+
+    /* 避免直接做 magnitude * numerator：
+     * 在 freestanding ARM 固件里，过宽的整数运算可能拉入编译器运行时除法 helper。
+     * 先拆成“整数部分 + 余数部分”，能保持 32 位运算，同时结果仍等价于
+     * (magnitude * numerator) / denominator。 */
+    return (whole * (uint32_t)numerator) +
+           ((remainder * (uint32_t)numerator) / (uint32_t)denominator);
+}
+
+static int32_t scale_delta_i32(int32_t delta, uint16_t numerator, uint16_t denominator)
+{
+    bool is_negative = delta < 0;
+    uint32_t magnitude = is_negative
+                             ? (uint32_t)(-(delta + 1)) + 1u
+                             : (uint32_t)delta;
+    uint32_t scaled = scale_delta_magnitude(magnitude, numerator, denominator);
+
+    return is_negative ? -(int32_t)scaled : (int32_t)scaled;
+}
+
 static int32_t filter_i32(int32_t previous, int32_t next, uint16_t numerator, uint16_t denominator)
 {
     int32_t delta = next - previous;
 
-    return previous + ((delta * (int32_t)numerator) / (int32_t)denominator);
+    return previous + scale_delta_i32(delta, numerator, denominator);
 }
 
 static uint32_t filter_u32(uint32_t previous, uint32_t next, uint16_t numerator, uint16_t denominator)
 {
-    int64_t delta = (int64_t)next - (int64_t)previous;
+    uint32_t scaled_delta = 0u;
 
-    return (uint32_t)((int64_t)previous + ((delta * (int64_t)numerator) / (int64_t)denominator));
+    if (next >= previous) {
+        scaled_delta = scale_delta_magnitude(next - previous, numerator, denominator);
+        return previous + scaled_delta;
+    }
+
+    scaled_delta = scale_delta_magnitude(previous - next, numerator, denominator);
+    return previous - scaled_delta;
 }
 
 bool sensor_sample_filter_init(

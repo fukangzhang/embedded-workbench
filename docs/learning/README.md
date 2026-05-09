@@ -351,6 +351,7 @@
 - `2026-05-08-FreeRTOS队列型RTOSPort骨架.md`
 - `2026-05-08-FreeRTOS任务创建骨架.md`
 - `2026-05-09-传感器来源接口.md`
+- `2026-05-09-滤波传感器来源.md`
 - `2026-05-09-传感器采集步骤.md`
 - `2026-05-09-环境处理步骤.md`
 - `2026-05-09-命令响应步骤.md`
@@ -377,6 +378,8 @@
 - `app/src/rtos_port_freertos.c`
 - `app/include/embedded_workbench/sensor_acquisition.h`
 - `app/src/sensor_acquisition.c`
+- `drivers/include/embedded_workbench/filtered_sensor_source.h`
+- `drivers/src/filtered_sensor_source.c`
 - `app/include/embedded_workbench/environment_processor.h`
 - `app/src/environment_processor.c`
 - `app/include/embedded_workbench/command_responder.h`
@@ -407,7 +410,7 @@
 - 为什么板上验证要使用 scheduler + reader + writer 同时开启的专用固件构建入口
 - VCP 验证脚本如何固定命令序列、检查关键响应片段，并离线回放已保存的串口验证记录
 - `config_update_queue` 如何把 `SET` 命令产生的新配置快照同步给环境处理任务
-- `firmware/src/main.c` 如何在 scheduler 启动前准备模拟 `sensor_source` 和 `alarm_output_sink`
+- `firmware/src/main.c` 如何在 scheduler 启动前准备带滤波层的模拟 `sensor_source` 和 `alarm_output_sink`
 - `xTaskCreate` 创建任务，但不等于调度器已经启动
 - `vTaskStartScheduler` 为什么要通过显式开关控制
 - 告警输出 task 为什么是“事件更新状态 + 周期刷新 indicator”
